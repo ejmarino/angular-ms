@@ -1,6 +1,8 @@
+'use strict';
+
 var ngms = angular.module('angular-ms', []);
 
-var MessageService = function() {
+var messageService = function () {
 
   var subscribers = {};
 
@@ -17,10 +19,12 @@ var MessageService = function() {
 
   function generateUUID() {
     var d = new Date().getTime();
-    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      /*jslint bitwise: true */
       var r = (d + Math.random() * 16) % 16 | 0;
       d = Math.floor(d / 16);
-      return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      /*jslint bitwise: false */
     });
     return uuid;
   }
@@ -33,7 +37,7 @@ var MessageService = function() {
     return new Channel(channelName).getTopic(topic);
   }
 
-  var Topic = function(channel, topic) {
+  var Topic = function (channel, topic) {
 
     function getChannelName() {
       return name;
@@ -59,18 +63,18 @@ var MessageService = function() {
       channel.unsubscribe(topic, token);
     }
 
-    return {
-      getChannelName: getChannelName,
-      getTopic: getTopic,
-      publish: publish,
-      subscribe: subscribe,
-      unsubscribe: unsubscribe,
-      unsubscribeAll: unsubscribeAll
-    };
+    this.getChannelName = getChannelName;
+    this.getTopic = getTopic;
+    this.publish = publish;
+    this.subscribe = subscribe;
+    this.unsubscribe = unsubscribe;
+    this.unsubscribeAll = unsubscribeAll;
 
-  }
+  };
 
-  var Channel = function(name) {
+  var Channel = function (name) {
+
+    var self = this;
 
     var subscriptions = {};
 
@@ -79,12 +83,12 @@ var MessageService = function() {
     }
 
     function getTopic(topic) {
-      return new Topic(this, topic);
+      return new Topic(self, topic);
     }
 
     function publish(topic, message) {
       var subs = getTopicSubs(name, topic);
-      var newList = subs.filter(function(subscriber) {
+      var newList = subs.filter(function (subscriber) {
         var retval = subscriber.callback(message, topic, name);
         return !retval;
       });
@@ -111,7 +115,7 @@ var MessageService = function() {
 
     function unsubscribe(topic, token) {
       var subs = getTopicSubs(name, topic);
-      var newList = subs.filter(function(subscriber) {
+      var newList = subs.filter(function (subscriber) {
         return subscriber.token !== token;
       });
       delete subscriptions[topic];
@@ -125,22 +129,18 @@ var MessageService = function() {
       }
     }
 
-    return {
-      getName: getName,
-      getTopic: getTopic,
-      publish: publish,
-      subscribe: subscribe,
-      unsubscribe: unsubscribe,
-      unsubscribeAll: unsubscribeAll
-    };
+    this.getName = getName;
+    this.getTopic = getTopic;
+    this.publish = publish;
+    this.subscribe = subscribe;
+    this.unsubscribe = unsubscribe;
+    this.unsubscribeAll = unsubscribeAll;
 
-  }
-
-  return {
-    getChannel: getChannel,
-    getTopic: getTopic
   };
+
+  this.getChannel = getChannel;
+  this.getTopic = getTopic;
 
 };
 
-ngms.service('messageService', MessageService);
+ngms.service('messageService', messageService);
