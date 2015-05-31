@@ -1,0 +1,21 @@
+{
+  "name": "angular-ms",
+  "version": "1.0.0",
+  "homepage": "https://github.com/ejmarino/angular-ms",
+  "authors": [
+    "Emiliano Marino <emiliano@ejmarino.com>"
+  ],
+  "description": "Angular's Publish/Subscribe Messaging Service",
+  "main": "dist/angular-ng.min.js",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jasmine": "~2.3.4"
+  }
+}

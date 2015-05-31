@@ -26,6 +26,9 @@
   },
   "homepage": "https://github.com/ejmarino/angular-ms",
   "devDependencies": {
-    "gulp": "^3.8.11"
+    "bower": "^1.4.1",
+    "gulp": "^3.8.11",
+    "gulp-concat": "^2.5.2",
+    "gulp-sourcemaps": "^1.5.2"
   }
 }
