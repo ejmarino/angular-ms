@@ -5,18 +5,18 @@
   // Declare the main module
   var myApp = angular.module('myApp', ['angular-ms']);
 
-  myApp.controller('PublisherCtrl', function ($scope, messageService) {
+  myApp.controller('PublisherCtrl', function ($scope, ngmsMessageService) {
 
-    var topic = messageService.getTopic('commy', 'news');
+    var topic = ngmsMessageService.getTopic('commy', 'news');
 
     $scope.publish = function () {
       topic.publish('Hola! gato! ' + new Date().getTime());
     };
   });
 
-  myApp.controller('Subscriber1Ctrl', function ($scope, messageService) {
+  myApp.controller('Subscriber1Ctrl', function ($scope, ngmsMessageService) {
 
-    var topic = messageService.getChannel('commy').getTopic('news');
+    var topic = ngmsMessageService.getChannel('commy').getTopic('news');
 
     var token;
 
@@ -24,7 +24,7 @@
       if (!token) {
         $scope.message1 = 'Subscribed!';
         token = topic.subscribe(function (message) {
-          $scope.message1 = message;
+          $scope.message1 = message.data;
         });
       } else {
         $scope.message1 = 'Already Subscribed!';
@@ -40,12 +40,12 @@
 
   });
 
-  myApp.controller('Subscriber2Ctrl', function ($scope, messageService) {
+  myApp.controller('Subscriber2Ctrl', function ($scope, ngmsMessageService) {
 
-    var topic = messageService.getChannel('commy').getTopic('news');
+    var topic = ngmsMessageService.getChannel('commy').getTopic('news');
 
     topic.subscribe(function (message) {
-      $scope.message2 = message;
+      $scope.message2 = message.data;
     });
   });
 

@@ -1,31 +1,51 @@
 var gulp = require('gulp');
-var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
-var jshint = require('gulp-jshint');
+var tslint = require('gulp-tslint');
 var rename = require('gulp-rename');
+var ts = require('gulp-typescript');
+var merge = require('merge2');
 var del = require('del');
- 
-function prepareScripts() {
-	return gulp.src(['bower_components/angular/angular.js','dist/angular-ms.js'])
-    .pipe(gulp.dest('demo/libs'));
-}
 
 function prepareDemo() {
-	return gulp.src('src/**/*.js')
-    .pipe(jshint('.jshintrc'))
-    .pipe(jshint.reporter('default'))
-    .pipe(concat('angular-ms.js'))
-    .pipe(gulp.dest('dist'))
-    .pipe(rename({suffix: '.min'}))
-    .pipe(uglify())
-    .pipe(gulp.dest('dist'));
+    return gulp.src(['bower_components/angular/angular.js', 'dist/js/angular-ms.js'])
+        .pipe(gulp.dest('demo/libs'));
+}
+
+function checkSyntax() {
+        return gulp.src('src/**/*.ts')
+        .pipe(tslint('tslint.json'))
+        .pipe(tslint.report('prose'));
+}
+
+function prepareScripts() {
+    var tsResult = gulp.src(['src/**/*.ts', 'typings/**/*.d.ts'])
+        .pipe(ts(
+          { 
+            removeComments: true,
+            declarationFiles: true,
+            noExternalResolve: true,
+            noImplicitAny: true,
+            out: 'angular-ms.js'
+          }
+         ));
+
+    return merge([
+        tsResult.dts.pipe(gulp.dest('dist/definitions')),
+        tsResult.js.pipe(gulp.dest('dist/js'))
+                   .pipe(rename({ suffix: '.min' }))
+                   .pipe(uglify())
+                   .pipe(gulp.dest('dist/js'))
+    ]);
+
 }
 
 gulp.task('default', ['build']);
 
-gulp.task('build', ['prepare-demo','prepare-scripts']);
+gulp.task('build', ['prepare-demo', 'prepare-scripts']);
 
-gulp.task('prepare-scripts', prepareScripts);
+gulp.task('prepare-scripts', ['checkSyntax'], prepareScripts);
 
-gulp.task('prepare-demo', ['prepare-scripts'] , prepareDemo);
+gulp.task('checkSyntax', checkSyntax);
+
+gulp.task('prepare-demo', ['prepare-scripts'], prepareDemo);
 

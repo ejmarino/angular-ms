@@ -16,6 +16,7 @@
     "tests"
   ],
   "dependencies": {
+    "angular": "*",
     "jasmine": "~2.3.4"
   }
 }
