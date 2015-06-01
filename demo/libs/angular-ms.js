@@ -1,7 +1,7 @@
 var ngms;
 (function (ngms) {
     'use strict';
-    var ng = angular.module('angular-ms', []);
+    var ng = angular.module('ngms', []);
     var Topic = (function () {
         function Topic(channel, topicName) {
             this.channel = channel;

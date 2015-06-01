@@ -3,7 +3,7 @@
   'use strict';
 
   // Declare the main module
-  var myApp = angular.module('myApp', ['angular-ms']);
+  var myApp = angular.module('myApp', ['ngms']);
 
   myApp.controller('PublisherCtrl', function ($scope, ngmsMessageService) {
 
