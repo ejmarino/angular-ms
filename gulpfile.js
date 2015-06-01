@@ -6,7 +6,7 @@ var rename = require('gulp-rename');
 var del = require('del');
  
 function prepareScripts() {
-	return gulp.src(['bower_components/angular/angular.min.js','dist/angular-ms.min.js'])
+	return gulp.src(['bower_components/angular/angular.js','dist/angular-ms.js'])
     .pipe(gulp.dest('demo/libs'));
 }
 

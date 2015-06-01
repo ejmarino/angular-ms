@@ -1,46 +1,53 @@
-// Declare the main module
-var myApp = angular.module('myApp', ['angular-ms']);
+/* global angular */
+(function () {
+  'use strict';
 
-myApp.controller('PublisherCtrl', function($scope, messageService) {
+  // Declare the main module
+  var myApp = angular.module('myApp', ['angular-ms']);
 
-  var topic = messageService.getTopic('commy', 'news');
+  myApp.controller('PublisherCtrl', function ($scope, messageService) {
 
-  $scope.publish = function() {
-    topic.publish('Hola! gato! ' + new Date().getTime());
-  };
-});
+    var topic = messageService.getTopic('commy', 'news');
 
-myApp.controller('Subscriber1Ctrl', function($scope, messageService) {
+    $scope.publish = function () {
+      topic.publish('Hola! gato! ' + new Date().getTime());
+    };
+  });
 
-  var topic = messageService.getChannel('commy').getTopic('news');
+  myApp.controller('Subscriber1Ctrl', function ($scope, messageService) {
 
-  var token;
+    var topic = messageService.getChannel('commy').getTopic('news');
 
-  $scope.subscribe = function() {
-    if (!token) {
-    $scope.message1 = 'Subscribed!';
-      token = topic.subscribe(function(message) {
-        $scope.message1 = message;
-      })
-    } else {
-    $scope.message1 = 'Already Subscribed!';
-    }
-  };
+    var token;
 
-  $scope.unsubscribe = function() {
-    topic.unsubscribe(token);
-    $scope.message1 = 'Unsubscribed!';
-    token = null;
-  };
+    $scope.subscribe = function () {
+      if (!token) {
+        $scope.message1 = 'Subscribed!';
+        token = topic.subscribe(function (message) {
+          $scope.message1 = message;
+        });
+      } else {
+        $scope.message1 = 'Already Subscribed!';
+      }
+    };
+
+    $scope.unsubscribe = function () {
+      topic.unsubscribe(token);
+      $scope.message1 = 'Unsubscribed!';
+      token = null;
+    };
 
 
-});
+  });
 
-myApp.controller('Subscriber2Ctrl', function($scope, messageService) {
+  myApp.controller('Subscriber2Ctrl', function ($scope, messageService) {
 
-  var topic = messageService.getChannel('commy').getTopic('news');
+    var topic = messageService.getChannel('commy').getTopic('news');
 
-  topic.subscribe(function(message) {
-    $scope.message2 = message;
-  })
-});
+    topic.subscribe(function (message) {
+      $scope.message2 = message;
+    });
+  });
+
+
+} ());
