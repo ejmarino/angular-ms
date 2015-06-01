@@ -6,7 +6,7 @@
     "Emiliano Marino <emiliano@ejmarino.com>"
   ],
   "description": "Angular's Publish/Subscribe Messaging Service",
-  "main": "dist/angular-ng.min.js",
+  "main": "dist/js/angular-ng.min.js",
   "license": "MIT",
   "ignore": [
     "**/.*",
@@ -16,7 +16,6 @@
     "tests"
   ],
   "dependencies": {
-    "angular": "*",
-    "jasmine": "~2.3.4"
+    "angular": "*"
   }
 }
