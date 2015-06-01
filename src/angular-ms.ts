@@ -3,7 +3,7 @@
 module ngms {
   'use strict';
 
-  var ng = angular.module('angular-ms', []);
+  var ng = angular.module('ngms', []);
 
   export interface IMessageService {
     getChannel(channelName: string): IChannel;
