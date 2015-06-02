@@ -17,14 +17,14 @@ declare module ngms {
         getName(): string;
         getTopic(name: string): ITopic;
         publish(topicName: string, message: string | IMessage): void;
-        subscribe(topicName: string, callback: (message: IMessage, topicName: string, channelName: string) => boolean): IToken;
+        subscribe(topicName: string, callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken;
         unsubscribe(token: IToken): void;
         unsubscribeAll(): void;
     }
     interface ITopic {
         getName(): string;
         publish(message: string | IMessage): void;
-        subscribe(callback: (message: IMessage, topicName: string, channelName: string) => boolean): IToken;
+        subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken;
         unsubscribe(token: IToken): void;
         unsubscribeAll(): void;
     }

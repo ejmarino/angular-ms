@@ -25,7 +25,7 @@ module ngms {
     getName(): string;
     getTopic(name: string): ITopic;
     publish(topicName: string, message: string | IMessage): void;
-    subscribe(topicName: string, callback: (message: IMessage, topicName: string, channelName: string) => boolean): IToken;
+    subscribe(topicName: string, callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken;
     unsubscribe(token: IToken): void;
     unsubscribeAll(): void;
   }
@@ -33,7 +33,7 @@ module ngms {
   export interface ITopic {
     getName(): string;
     publish(message: string | IMessage): void;
-    subscribe(callback: (message: IMessage, topicName: string, channelName: string) => boolean): IToken;
+    subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken;
     unsubscribe(token: IToken): void;
     unsubscribeAll(): void;
   }
@@ -60,7 +60,7 @@ module ngms {
       this.channel.publish(this.topicName, message);
     }
 
-    public subscribe(callback: (message: IMessage, topicName: string, channelName: string) => boolean): IToken {
+    public subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken {
       return this.channel.subscribe(this.topicName, callback);
     }
 
@@ -114,7 +114,7 @@ module ngms {
       this.registry.subscribers[this.channelName][topicName] = newList;
     }
 
-    public subscribe(topicName: string, callback: (message: IMessage, topicName: string, channelName: string) => boolean) {
+    public subscribe(topicName: string, callback: (message: IMessage, topicName?: string, channelName?: string) => boolean) {
       var tokenId = this.registry.generateUUID();
       var subs = this.registry.getTopicSubs(this.channelName, topicName);
       var token: IToken = {
