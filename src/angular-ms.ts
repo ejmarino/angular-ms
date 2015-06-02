@@ -12,7 +12,7 @@ module ngms {
 
   export interface IMessage {
     msgId: string;
-    data: string;
+    data: any;
   }
 
   export interface IToken {

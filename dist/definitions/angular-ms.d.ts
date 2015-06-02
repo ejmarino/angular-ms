@@ -6,7 +6,7 @@ declare module ngms {
     }
     interface IMessage {
         msgId: string;
-        data: string;
+        data: any;
     }
     interface IToken {
         channelName: string;
