@@ -11,7 +11,7 @@ module ngms {
   }
 
   export interface IMessage {
-    msgId: string;
+    msgId?: string;
     data: any;
   }
 

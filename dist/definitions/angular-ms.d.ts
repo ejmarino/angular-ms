@@ -5,7 +5,7 @@ declare module ngms {
         getTopic(channelName: string, topicName: string): ITopic;
     }
     interface IMessage {
-        msgId: string;
+        msgId?: string;
         data: any;
     }
     interface IToken {
