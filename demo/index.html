@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="">
+    <meta name="description" content="angular-ms demo using sb-admin v2 theme">
+    <meta name="author" content="ejmarino">
 
-    <title>SB Admin 2 - Bootstrap Admin Theme</title>
+    <title>angular-ms demo page</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -38,11 +37,10 @@
 
 </head>
 
-<body>
+<body ng-app="myApp">
 
     <div id="wrapper">
-
-        <!-- Navigation -->
+   <!-- Navigation -->
         <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -51,7 +49,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="http://startbootstrap.com/template-overviews/sb-admin-2/">SB Admin v2.0</a>
+                <a class="navbar-brand" href="http://startbootstrap.com/template-overviews/sb-admin-2/">Angular Messaging System Demostration <small>using SB Admin v2.0 theme</small></a>
             </div>
             <!-- /.navbar-header -->
 
@@ -112,12 +110,12 @@
         <div id="page-wrapper">
             <div class="row">
                 <div class="col-lg-12">
-                    <h1 class="page-header">Dashboard</h1>
+                    <h1 class="page-header">Weather Tracker</h1>
                 </div>
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
-            <div class="row">
+            <div class="row" ng-controller="panelsController">
                 <div class="col-lg-3 col-md-6">
                     <div class="panel panel-primary">
                         <div class="panel-heading">
@@ -126,8 +124,8 @@
                                     <i class="fa fa-comments fa-5x"></i>
                                 </div>
                                 <div class="col-xs-9 text-right">
-                                    <div class="huge">26</div>
-                                    <div>New Comments!</div>
+                                    <div class="huge">{{totalItems}}</div>
+                                    <div>{{newestDate}}</div>
                                 </div>
                             </div>
                         </div>
@@ -145,11 +143,11 @@
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-3">
-                                    <i class="fa fa-tasks fa-5x"></i>
+                                    <i class="fa fa-sun-o fa-5x"></i>
                                 </div>
                                 <div class="col-xs-9 text-right">
-                                    <div class="huge">12</div>
-                                    <div>New Tasks!</div>
+                                    <div class="huge">{{tempPeaks}}</div>
+                                    <div>Hot Peaks</div>
                                 </div>
                             </div>
                         </div>
@@ -167,11 +165,11 @@
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-3">
-                                    <i class="fa fa-shopping-cart fa-5x"></i>
+                                    <i class="fa fa-cloud fa-5x"></i>
                                 </div>
                                 <div class="col-xs-9 text-right">
-                                    <div class="huge">124</div>
-                                    <div>New Orders!</div>
+                                    <div class="huge">{{humPeaks}}</div>
+                                    <div>Wet Peaks</div>
                                 </div>
                             </div>
                         </div>
@@ -192,8 +190,8 @@
                                     <i class="fa fa-support fa-5x"></i>
                                 </div>
                                 <div class="col-xs-9 text-right">
-                                    <div class="huge">13</div>
-                                    <div>Support Tickets!</div>
+                                    <div class="huge">{{badDays}}</div>
+                                    <div>Really bad days</div>
                                 </div>
                             </div>
                         </div>
@@ -234,8 +232,15 @@
                             </div>
                         </div>
                         <!-- /.panel-heading -->
-                        <div class="panel-body">
+                        <div class="panel-body" ng-controller="graphController">
                             <div id="morris-area-chart"></div>
+                            <div line-chart 
+                                line-data='data' 
+                                line-xkey='timestring' 
+                                line-ykeys='["temperature", "humidity"]'  
+                                line-labels='["Temperature", "Humidity"]'
+                                line-colors='["#31C0BE","#7a92a3"]'>
+                            </div>
                         </div>
                         <!-- /.panel-body -->
                     </div>
@@ -243,27 +248,17 @@
                 </div>
                 <!-- /.col-lg-8 -->
                 <div class="col-lg-4">
-                    <div class="panel panel-default">
+                    <div class="panel panel-default" ng-controller="messagesController">
                         <div class="panel-heading">
                             <i class="fa fa-bell fa-fw"></i> Notifications Panel
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
                             <div class="list-group">
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-comment fa-fw"></i> New Comment
-                                    <span class="pull-right text-muted small"><em>4 minutes ago</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-twitter fa-fw"></i> 3 New Followers
-                                    <span class="pull-right text-muted small"><em>12 minutes ago</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-envelope fa-fw"></i> Message Sent
-                                    <span class="pull-right text-muted small"><em>27 minutes ago</em>
-                                    </span>
+                                <a href="#" class="list-group-item" ng-repeat="item in itemsList">
+                                    <p><i class="fa fa-envelope fa-fw"></i> {{item.temperature | number:1}} ºC & {{item.humidity | number:0}} %</p>
+                                    <span class="pull-right text-muted small"><em>{{item.timestamp.toLocaleTimeString()}}</em></span>
+                                    <br/>
                                 </a>
                             </div>
                             <!-- /.list-group -->
@@ -294,10 +289,17 @@
     <!-- Morris Charts JavaScript -->
     <script src="libs/raphael-min.js"></script>
     <script src="libs/morris.min.js"></script>
-    <script src="js/morris-data.js"></script>
-
+    
     <!-- Custom Theme JavaScript -->
     <script src="js/sb-admin-2.js"></script>
+
+    <!-- Angular-ms Demo -->
+    <script src="libs/angular.js"></script>
+    <script src="libs/angular-ms.js"></script>
+
+    <script src="js/app.js"></script>
+    <script src="js/dataservice.js"></script>
+
 
 </body>
 
