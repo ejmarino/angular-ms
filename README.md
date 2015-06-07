@@ -4,6 +4,8 @@
 
 `angular-ms` provides a messaging services to angular based applications. It allows to any controller and service to send and receive messages using publish/subscribe technique. 
 
+[Check out a demo here](http://ejmarino.github.io/angular-ms/demo/) (it's based on SB Admin v2 theme, so some things are not well 'angularized', but it's enough for a demo I think :) )
+
 ##How it works
 
 Anyone who wants to get involved in a communication needs a **Channel**. All channels are identified by name and messages that are broadcasted through it have a **Topic** related. 
