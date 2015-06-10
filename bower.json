@@ -16,6 +16,7 @@
     "tests"
   ],
   "dependencies": {
-    "angular": "*"
+    "angular": "*",
+    "angular-mocks": "~1.4.0"
   }
 }

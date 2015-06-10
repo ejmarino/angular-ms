@@ -2,6 +2,7 @@ var gulp = require('gulp');
 var uglify = require('gulp-uglify');
 var tslint = require('gulp-tslint');
 var rename = require('gulp-rename');
+var karma = require('gulp-karma');
 var ts = require('gulp-typescript');
 var merge = require('merge2');
 var del = require('del');
@@ -38,6 +39,29 @@ function prepareScripts() {
     ]);
 
 }
+
+function test() {
+
+    var testFiles = [
+      'bower_components/angular/angular.js',
+      'bower_components/angular-mocks/angular-mocks.js',
+      'dist/js/angular-ms.js',
+      'test/*/*Spec.js'
+    ];
+
+    // Be sure to return the stream 
+    return gulp.src(testFiles)
+    .pipe(karma({
+      configFile: 'test/karma.conf.js',
+      action: 'run'
+    }));
+   // .on('error', function(err) {
+      // Make sure failed tests cause gulp to exit non-zero 
+      //throw err;
+   // });
+}
+
+gulp.task('test', ['prepare-scripts'], test);
 
 gulp.task('default', ['build']);
 
