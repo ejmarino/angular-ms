@@ -23,6 +23,7 @@ declare module ngms {
     }
     interface ITopic {
         getName(): string;
+        getChannelName(): string;
         publish(message: string | IMessage): void;
         subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken;
         unsubscribe(token: IToken): void;

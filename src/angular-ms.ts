@@ -32,6 +32,7 @@ module ngms {
 
   export interface ITopic {
     getName(): string;
+    getChannelName(): string;
     publish(message: string | IMessage): void;
     subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken;
     unsubscribe(token: IToken): void;
@@ -54,6 +55,10 @@ module ngms {
 
     public getName(): string {
       return this.topicName;
+    }
+
+    public getChannelName(): string {
+      return this.channel.getName();
     }
 
     public publish(message: string | IMessage): void {

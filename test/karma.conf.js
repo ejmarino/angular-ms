@@ -1,7 +1,7 @@
 // Karma configuration
 // Generated on Fri Sep 27 2013 23:41:22 GMT+0200 (W. Europe Daylight Time)
 
-module.exports = function(config) {
+module.exports = function (config) {
   config.set({
 
     // base path, that will be used to resolve files and exclude
@@ -11,12 +11,11 @@ module.exports = function(config) {
     frameworks: ['jasmine'],
 
     // list of files / patterns to load in the browser
-    
     files: [
       'bower_components/angular/angular.js',
       'bower_components/angular-mocks/angular-mocks.js',
       'dist/js/angular-ms.js',
-      'test/*Spec.js'
+      'test/js/*Spec.js'
     ],
     
     // list of files to exclude
@@ -48,7 +47,7 @@ module.exports = function(config) {
     // - Safari (only Mac)
     // - PhantomJS
     // - IE (only Windows)
-    browsers: ['Chrome'],
+    browsers: ['PhantomJS'],
 
     // If browser does not capture in given timeout [ms], kill it
     captureTimeout: 60000,

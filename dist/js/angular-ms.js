@@ -10,6 +10,9 @@ var ngms;
         Topic.prototype.getName = function () {
             return this.topicName;
         };
+        Topic.prototype.getChannelName = function () {
+            return this.channel.getName();
+        };
         Topic.prototype.publish = function (message) {
             this.channel.publish(this.topicName, message);
         };
