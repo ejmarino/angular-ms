@@ -3,9 +3,12 @@ declare module ngms {
     interface IMessageService {
         getChannel(channelName: string): IChannel;
         getTopic(channelName: string, topicName: string): ITopic;
+        subscribeAllChannels(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
+        unsubscribeAllChannels(token: IToken): void;
+        getRegistryStats(): any;
     }
     interface IMessage {
-        msgId?: string;
+        $msgId?: string;
         data: any;
     }
     interface IToken {
@@ -17,7 +20,7 @@ declare module ngms {
         getName(): string;
         getTopic(name: string): ITopic;
         publish(topicName: string, message: string | IMessage): void;
-        subscribe(topicName: string, callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken;
+        subscribe(topicName: string, callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
         unsubscribe(token: IToken): void;
         unsubscribeAll(): void;
     }
@@ -25,12 +28,12 @@ declare module ngms {
         getName(): string;
         getChannelName(): string;
         publish(message: string | IMessage): void;
-        subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => boolean): IToken;
+        subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
         unsubscribe(token: IToken): void;
         unsubscribeAll(): void;
     }
     interface ISubscription {
         token: IToken;
-        callback: (message: IMessage, topicName: string, channelName: string) => boolean;
+        callback: (message: IMessage, topicName: string, channelName: string) => void;
     }
 }
