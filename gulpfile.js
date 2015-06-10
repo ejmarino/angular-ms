@@ -63,16 +63,34 @@ function test() {
         .pipe(karma({
         configFile: 'test/karma.conf.js',
         action: 'run'
-    }));
-    // .on('error', function(err) {
+    }))
+    .on('error', function(err) {
     // Make sure failed tests cause gulp to exit non-zero 
-    //throw err;
-    // });
+    throw err;
+    });
+}
+
+function testWatch() {
+    var testFiles = [
+        'bower_components/angular/angular.js',
+        'bower_components/angular-mocks/angular-mocks.js',
+        'dist/js/angular-ms.js',
+        'test/js/*Spec.js'
+    ];
+
+    // Be sure to return the stream 
+    return gulp.src(testFiles)
+        .pipe(karma({
+        configFile: 'test/karma.conf.js',
+        action: 'watch'
+    }));
 }
 
 gulp.task('prepare-test-scripts', ['prepare-scripts'], prepareTestScripts);
 
 gulp.task('test', ['prepare-test-scripts'], test);
+
+gulp.task('test-watch', testWatch);
 
 gulp.task('default', ['build']);
 
