@@ -14,8 +14,8 @@ module ngms {
   }
 
   export interface IMessage {
+    [index: string]: any;
     $msgId?: string;
-    data: any;
   }
 
   export interface IToken {

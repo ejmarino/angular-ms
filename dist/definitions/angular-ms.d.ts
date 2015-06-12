@@ -8,8 +8,8 @@ declare module ngms {
         getRegistryStats(): any;
     }
     interface IMessage {
+        [index: string]: any;
         $msgId?: string;
-        data: any;
     }
     interface IToken {
         channelName: string;
