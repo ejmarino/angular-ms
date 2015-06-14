@@ -1,50 +1,15 @@
 /// <reference path="../typings/angularjs/angular.d.ts" />
+/// <reference path="interfaces.ts" />
 
 module ngms {
   'use strict';
 
   var ng = angular.module('ngms', []);
 
-  export interface IMessageService {
-    getChannel(channelName: string): IChannel;
-    getTopic(channelName: string, topicName: string): ITopic;
-    subscribeAllChannels(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
-    unsubscribeAllChannels(token: IToken): void;
-    getRegistryStats(): any;
-  }
-
-  export interface IMessage {
-    [index: string]: any;
-    $msgId?: string;
-  }
-
-  export interface IToken {
-    channelName: string;
-    topicName: string;
-    tokenId: string;
-  }
-
-  export interface IChannel {
-    getName(): string;
-    getTopic(name: string): ITopic;
-    publish(topicName: string, message: string | IMessage): void;
-    subscribe(topicName: string, callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
-    unsubscribe(token: IToken): void;
-    unsubscribeAll(): void;
-  }
-
-  export interface ITopic {
-    getName(): string;
-    getChannelName(): string;
-    publish(message: string | IMessage): void;
-    subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
-    unsubscribe(token: IToken): void;
-    unsubscribeAll(): void;
-  }
-
-  export interface ISubscription {
+  interface ISubscription {
     token: IToken;
-    callback: (message: IMessage, topicName: string, channelName: string) => void;
+    callback: ICallback;
+    oneTime: boolean;
   }
 
   class Topic implements ITopic {
@@ -64,11 +29,15 @@ module ngms {
       return this.$channel.getName();
     }
 
-    public publish(message: string | IMessage): void {
-      this.$channel.publish(this.$topicName, message);
+    public publishSync(message: string | IMessage): void {
+      this.$channel.publishSync(this.$topicName, message);
     }
 
-    public subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken {
+    public publish(message: string | IMessage): ng.IPromise<void> {
+      return this.$channel.publish(this.$topicName, message);
+    }
+
+    public subscribe(callback: ICallback): IToken {
       return this.$channel.subscribe(this.$topicName, callback);
     }
 
@@ -105,25 +74,49 @@ module ngms {
       return this.$channelName;
     }
 
+    public getDefaultTopic() {
+      return new Topic(this, this.$registry.$defaultTopicName);
+    }
+
     public getTopic(topicName: string) {
       return new Topic(this, topicName);
     }
 
-    public publish(topicName: string, message: string | IMessage) {
+    public publishSync(topicName: string, message?: string | IMessage): void {
+      var msg = this.$ensureMessage(message);
+      this.$registry.publishSync(this.$channelName, topicName, msg);
+    }
+
+    public publish(topicName: string, message: string | IMessage): ng.IPromise<void> {
+      var msg = this.$ensureMessage(message);
+      return this.$registry.publish(this.$channelName, topicName, msg);
+    }
+
+    private $ensureMessage(message: string | IMessage): IMessage {
       var msg: IMessage;
-      if (typeof message === 'string') {
+      if (!message) {
+        msg = { $msgId: '' };
+      } else if (typeof message === 'string') {
         msg = { data: message, $msgId: this.$registry.generateUUID() };
       } else {
         msg = message;
+        msg.$msgId = this.$registry.generateUUID();
       }
-      this.$registry.publish(this.$channelName, topicName, msg);
+      return msg;
     }
 
-    public subscribeAll(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken {
+    public subscribeAll(callback: ICallback): IToken {
       return this.subscribe(this.$registry.$allTopicsName, callback);
     }
 
-    public subscribe(topicName: string, callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken {
+    public subscribe(topicName: string, callback: ICallback): IToken {
+      return this.$subscribe(topicName, callback, false);
+    }
+    public subscribeOneTime(topicName: string, callback: ICallback): IToken {
+      return this.$subscribe(topicName, callback, true);
+    }
+
+    private $subscribe(topicName: string, callback: ICallback, oneTime: boolean): IToken {
       var tokenId = this.$registry.generateUUID();
       var subs = this.$registry.getTopicSubs(this.$channelName, topicName);
       var token: IToken = {
@@ -133,7 +126,8 @@ module ngms {
       };
       subs.push({
         token: token,
-        callback: callback
+        callback: callback,
+        oneTime: oneTime
       });
       this.$subscriptions[tokenId] = token;
       return token;
@@ -157,10 +151,19 @@ module ngms {
   }
 
   class Registry {
+    private $timeout: ng.ITimeoutService;
+    private $q: ng.IQService;
+
     public $allTopicsName: string = '$$all-topics';
     public $allChannelsName: string = '$$all-channels';
+    public $defaultTopicName: string = '$$default-topic';
 
     public $subscribers: { [channelName: string]: { [topicName: string]: ISubscription[] } } = {};
+
+    public constructor($timeout: ng.ITimeoutService, $q: ng.IQService) {
+      this.$timeout = $timeout;
+      this.$q = $q;
+    }
 
     public getChannelSubs(channelName: string): { [topicName: string]: ISubscription[] } {
       this.$subscribers[channelName] = this.$subscribers[channelName] || {};
@@ -188,19 +191,30 @@ module ngms {
       }
     }
 
-    public publish(channelName: string, topicName: string, message: IMessage): void {
+    public publishSync(channelName: string, topicName: string, message: IMessage): void {
+      var subs = this.$getSubscriptions(channelName, topicName);
+      subs.forEach(function(subscriber: ISubscription) {
+        subscriber.callback(message, topicName, channelName);
+      });
+    }
+
+    public publish(channelName: string, topicName: string, message: IMessage): ng.IPromise<void> {
+      var subs = this.$getSubscriptions(channelName, topicName);
+      var self = this;
+      return new this.$q((): void => {
+        self.$timeout(() => {
+          subs.forEach(function(subscriber: ISubscription) {
+            subscriber.callback(message, topicName, channelName);
+          });
+        }, 0);
+      });
+    }
+
+    private $getSubscriptions(channelName: string, topicName: string): ISubscription[] {
       var topicSubs = this.getTopicSubs(channelName, topicName);
       var allTopicSubs = this.getTopicSubs(channelName, this.$allTopicsName);
       var allChannelsSubs = this.getTopicSubs(this.$allChannelsName, this.$allTopicsName);
-      this.$publish(channelName, topicName, message, topicSubs);
-      this.$publish(channelName, topicName, message, allTopicSubs);
-      this.$publish(channelName, topicName, message, allChannelsSubs);
-    }
-
-    public $publish(channelName: string, topicName: string, message: IMessage, subscriptions: ISubscription[]): void {
-      subscriptions.forEach(function(subscriber: ISubscription) {
-        subscriber.callback(message, topicName, channelName);
-      });
+      return topicSubs.concat(allTopicSubs, allChannelsSubs);
     }
 
     public generateUUID() {
@@ -217,7 +231,11 @@ module ngms {
   }
 
   class MessageService implements IMessageService {
-    private $registry: Registry = new Registry();
+    private $registry: Registry;
+
+    public constructor($timeout: ng.ITimeoutService, $q: ng.IQService) {
+      this.$registry = new Registry($timeout, $q);
+    }
 
     public getChannel(channelName: string): IChannel {
       return new Channel(channelName, this.$registry);
@@ -227,7 +245,15 @@ module ngms {
       return new Channel(channelName, this.$registry).getTopic(topicName);
     }
 
-    public subscribeAllChannels(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken {
+    public subscribeAllChannelsOneTime(callback: ICallback): IToken {
+      return this.$subscribeAllChannels(callback, true);
+    }
+
+    public subscribeAllChannels(callback: ICallback): IToken {
+      return this.$subscribeAllChannels(callback, false);
+    }
+
+    private $subscribeAllChannels(callback: ICallback, oneTime: boolean): IToken {
       var tokenId = this.$registry.generateUUID();
       var subs = this.$registry.getTopicSubs(this.$registry.$allChannelsName, this.$registry.$allTopicsName);
       var token: IToken = {
@@ -237,7 +263,8 @@ module ngms {
       };
       subs.push({
         token: token,
-        callback: callback
+        callback: callback,
+        oneTime: false
       });
       return token;
     }

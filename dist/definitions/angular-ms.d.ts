@@ -3,7 +3,8 @@ declare module ngms {
     interface IMessageService {
         getChannel(channelName: string): IChannel;
         getTopic(channelName: string, topicName: string): ITopic;
-        subscribeAllChannels(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
+        subscribeAllChannels(callback: ICallback): IToken;
+        subscribeAllChannelsOneTime(callback: ICallback): IToken;
         unsubscribeAllChannels(token: IToken): void;
         getRegistryStats(): any;
     }
@@ -18,22 +19,27 @@ declare module ngms {
     }
     interface IChannel {
         getName(): string;
+        getDefaultTopic(): ITopic;
         getTopic(name: string): ITopic;
-        publish(topicName: string, message: string | IMessage): void;
-        subscribe(topicName: string, callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
+        publishSync(topicName: string, message?: string | IMessage): void;
+        publish(topicName: string, message?: string | IMessage): ng.IPromise<void>;
+        subscribe(topicName: string, callback: ICallback): IToken;
+        subscribeOneTime(topicName: string, callback: ICallback): IToken;
         unsubscribe(token: IToken): void;
         unsubscribeAll(): void;
     }
     interface ITopic {
         getName(): string;
         getChannelName(): string;
-        publish(message: string | IMessage): void;
-        subscribe(callback: (message: IMessage, topicName?: string, channelName?: string) => void): IToken;
+        publishSync(message?: string | IMessage): void;
+        publish(message?: string | IMessage): ng.IPromise<void>;
+        subscribe(callback: ICallback): IToken;
         unsubscribe(token: IToken): void;
         unsubscribeAll(): void;
     }
-    interface ISubscription {
-        token: IToken;
-        callback: (message: IMessage, topicName: string, channelName: string) => void;
+    interface ICallback {
+        (message: IMessage, topicName?: string, channelName?: string): void;
     }
+}
+declare module ngms {
 }

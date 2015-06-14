@@ -1,6 +1,6 @@
 /// <reference path="../typings/jasmine/jasmine.d.ts" />
 /// <reference path="../typings/angularjs/angular-mocks.d.ts" />
-/// <reference path="../src/angular-ms.ts" />
+/// <reference path="../src/interfaces.ts" />
 
 describe('Angular Message Service', () => {
 
@@ -29,7 +29,7 @@ describe('Angular Message Service', () => {
       expect(ngmsMessageService.getRegistryStats().totalSubscriptions).toEqual(0);
       var token = ngmsMessageService.subscribeAllChannels((message: ngms.IMessage, topicName: string, channelName: string) => {
         data = {
-          messageData: message.data,
+          messageData: message['data'],
           topic: topicName,
           channel: channelName
         };
@@ -38,7 +38,7 @@ describe('Angular Message Service', () => {
       var chTp: string[][] = [['test', 'test'], ['test', 'test2'], ['test2', 'test'], ['test2', 'test2']];
       chTp.forEach((pair: string[]) => {
         var topic = ngmsMessageService.getTopic(pair[0], pair[1]);
-        topic.publish('12345');
+        topic.publishSync('12345');
         expect(data.messageData).toEqual('12345');
         expect(data.channel).toEqual(pair[0]);
         expect(data.topic).toEqual(pair[1]);
@@ -47,7 +47,7 @@ describe('Angular Message Service', () => {
       ngmsMessageService.unsubscribeAllChannels(token);
       chTp.forEach((pair: string[]) => {
         var topic = ngmsMessageService.getTopic(pair[0], pair[1]);
-        topic.publish('12345');
+        topic.publishSync('12345');
         expect(data).toBeUndefined();
       });
       expect(ngmsMessageService.getRegistryStats().totalSubscriptions).toEqual(0);

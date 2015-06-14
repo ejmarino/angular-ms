@@ -1,6 +1,10 @@
 var ngms;
 (function (ngms) {
     'use strict';
+})(ngms || (ngms = {}));
+var ngms;
+(function (ngms) {
+    'use strict';
     var ng = angular.module('ngms', []);
     var Topic = (function () {
         function Topic(channel, topicName) {
@@ -13,8 +17,11 @@ var ngms;
         Topic.prototype.getChannelName = function () {
             return this.$channel.getName();
         };
+        Topic.prototype.publishSync = function (message) {
+            this.$channel.publishSync(this.$topicName, message);
+        };
         Topic.prototype.publish = function (message) {
-            this.$channel.publish(this.$topicName, message);
+            return this.$channel.publish(this.$topicName, message);
         };
         Topic.prototype.subscribe = function (callback) {
             return this.$channel.subscribe(this.$topicName, callback);
@@ -44,23 +51,44 @@ var ngms;
         Channel.prototype.getName = function () {
             return this.$channelName;
         };
+        Channel.prototype.getDefaultTopic = function () {
+            return new Topic(this, this.$registry.$defaultTopicName);
+        };
         Channel.prototype.getTopic = function (topicName) {
             return new Topic(this, topicName);
         };
+        Channel.prototype.publishSync = function (topicName, message) {
+            var msg = this.$ensureMessage(message);
+            this.$registry.publishSync(this.$channelName, topicName, msg);
+        };
         Channel.prototype.publish = function (topicName, message) {
+            var msg = this.$ensureMessage(message);
+            return this.$registry.publish(this.$channelName, topicName, msg);
+        };
+        Channel.prototype.$ensureMessage = function (message) {
             var msg;
-            if (typeof message === 'string') {
+            if (!message) {
+                msg = { $msgId: '' };
+            }
+            else if (typeof message === 'string') {
                 msg = { data: message, $msgId: this.$registry.generateUUID() };
             }
             else {
                 msg = message;
+                msg.$msgId = this.$registry.generateUUID();
             }
-            this.$registry.publish(this.$channelName, topicName, msg);
+            return msg;
         };
         Channel.prototype.subscribeAll = function (callback) {
             return this.subscribe(this.$registry.$allTopicsName, callback);
         };
         Channel.prototype.subscribe = function (topicName, callback) {
+            return this.$subscribe(topicName, callback, false);
+        };
+        Channel.prototype.subscribeOneTime = function (topicName, callback) {
+            return this.$subscribe(topicName, callback, true);
+        };
+        Channel.prototype.$subscribe = function (topicName, callback, oneTime) {
             var tokenId = this.$registry.generateUUID();
             var subs = this.$registry.getTopicSubs(this.$channelName, topicName);
             var token = {
@@ -70,7 +98,8 @@ var ngms;
             };
             subs.push({
                 token: token,
-                callback: callback
+                callback: callback,
+                oneTime: oneTime
             });
             this.$subscriptions[tokenId] = token;
             return token;
@@ -94,10 +123,13 @@ var ngms;
         return Channel;
     })();
     var Registry = (function () {
-        function Registry() {
+        function Registry($timeout, $q) {
             this.$allTopicsName = '$$all-topics';
             this.$allChannelsName = '$$all-channels';
+            this.$defaultTopicName = '$$default-topic';
             this.$subscribers = {};
+            this.$timeout = $timeout;
+            this.$q = $q;
         }
         Registry.prototype.getChannelSubs = function (channelName) {
             this.$subscribers[channelName] = this.$subscribers[channelName] || {};
@@ -123,18 +155,28 @@ var ngms;
                 this.$subscribers[token.channelName][token.topicName] = newList;
             }
         };
+        Registry.prototype.publishSync = function (channelName, topicName, message) {
+            var subs = this.$getSubscriptions(channelName, topicName);
+            subs.forEach(function (subscriber) {
+                subscriber.callback(message, topicName, channelName);
+            });
+        };
         Registry.prototype.publish = function (channelName, topicName, message) {
+            var subs = this.$getSubscriptions(channelName, topicName);
+            var self = this;
+            return new this.$q(function () {
+                self.$timeout(function () {
+                    subs.forEach(function (subscriber) {
+                        subscriber.callback(message, topicName, channelName);
+                    });
+                }, 0);
+            });
+        };
+        Registry.prototype.$getSubscriptions = function (channelName, topicName) {
             var topicSubs = this.getTopicSubs(channelName, topicName);
             var allTopicSubs = this.getTopicSubs(channelName, this.$allTopicsName);
             var allChannelsSubs = this.getTopicSubs(this.$allChannelsName, this.$allTopicsName);
-            this.$publish(channelName, topicName, message, topicSubs);
-            this.$publish(channelName, topicName, message, allTopicSubs);
-            this.$publish(channelName, topicName, message, allChannelsSubs);
-        };
-        Registry.prototype.$publish = function (channelName, topicName, message, subscriptions) {
-            subscriptions.forEach(function (subscriber) {
-                subscriber.callback(message, topicName, channelName);
-            });
+            return topicSubs.concat(allTopicSubs, allChannelsSubs);
         };
         Registry.prototype.generateUUID = function () {
             var d = new Date().getTime();
@@ -148,8 +190,8 @@ var ngms;
         return Registry;
     })();
     var MessageService = (function () {
-        function MessageService() {
-            this.$registry = new Registry();
+        function MessageService($timeout, $q) {
+            this.$registry = new Registry($timeout, $q);
         }
         MessageService.prototype.getChannel = function (channelName) {
             return new Channel(channelName, this.$registry);
@@ -157,7 +199,13 @@ var ngms;
         MessageService.prototype.getTopic = function (channelName, topicName) {
             return new Channel(channelName, this.$registry).getTopic(topicName);
         };
+        MessageService.prototype.subscribeAllChannelsOneTime = function (callback) {
+            return this.$subscribeAllChannels(callback, true);
+        };
         MessageService.prototype.subscribeAllChannels = function (callback) {
+            return this.$subscribeAllChannels(callback, false);
+        };
+        MessageService.prototype.$subscribeAllChannels = function (callback, oneTime) {
             var tokenId = this.$registry.generateUUID();
             var subs = this.$registry.getTopicSubs(this.$registry.$allChannelsName, this.$registry.$allTopicsName);
             var token = {
@@ -167,7 +215,8 @@ var ngms;
             };
             subs.push({
                 token: token,
-                callback: callback
+                callback: callback,
+                oneTime: false
             });
             return token;
         };
