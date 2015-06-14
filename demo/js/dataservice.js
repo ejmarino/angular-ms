@@ -12,8 +12,8 @@
 
     for (var i = 0; i < len; i++) {
       data[i] = {
-        id: i+1,
-        timestamp: new Date(startTimestamp + i*86400),
+        id: i + 1,
+        timestamp: new Date(startTimestamp + i * 86400),
         temperature: i * 0.3 + 15 + Math.random() * 15,
         humidity: 50 + Math.random() * 50
       };
@@ -32,32 +32,32 @@
 
     function add(item) {
       var newitem = angular.copy(item);
-       data.push(newitem);
-       newitem.id = data.length;
-       newitem.timestamp = new Date();
-       channel.publish('new',{data: item, count: data.length});
-       return item.id;
-    }	
+      data.push(newitem);
+      newitem.id = data.length;
+      newitem.timestamp = new Date();
+      channel.publish({ data: newitem, event: 'new', count: data.length });
+      return item.id;
+    }
 
     function edit(item) {
       var newitem = angular.copy(item);
-       data[newitem.id] = newitem;
-       newitem.timestamp = new Date();
-       channel.publish('update',{data: newitem, count: data.length});
-    }	
+      data[newitem.id] = newitem;
+      newitem.timestamp = new Date();
+      channel.publish({ data: newitem, event: 'update', count: data.length });
+    }
 
     function get(id) {
-       return angular.copy(data[id]);
+      return angular.copy(data[id]);
     }
 
     function query() {
-       return angular.copy(data);
+      return angular.copy(data);
     }
 
     function count() {
-       return data.length;
+      return data.length;
     }
-    
+
     return {
       query: query,
       get: get,

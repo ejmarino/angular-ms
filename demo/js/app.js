@@ -5,7 +5,6 @@
   // Declare the main module
   var myApp = angular.module('myApp', ['ngms']);
 
-
   myApp.run(function ($interval, dataService) {
     $interval(function() {
       dataService.add(dataService.buildRandomItem());
@@ -22,21 +21,8 @@
     $scope.humPeaks = 0;
     $scope.badDays = 0;
 
-    channel.subscribe('new', function(message) {
+    channel.subscribe(function(message) {
       $scope.totalItems = message.count;
-      $scope.newestDate = message.data.timestamp.toLocaleTimeString();
-      if (message.data.temperature > 35) {
-        $scope.tempPeaks++;
-      }
-      if (message.data.humidity > 90) {
-        $scope.humPeaks++;
-      }
-      if (message.data.humidity > 90 && message.data.temperature > 35) {
-        $scope.badDays++;
-      }
-    }); 
-
-    channel.subscribe('update', function(message) {
       $scope.newestDate = message.data.timestamp.toLocaleTimeString();
       if (message.data.temperature > 35) {
         $scope.tempPeaks++;
@@ -61,7 +47,7 @@
 
     $scope.itemsList = [];
 
-    channel.subscribe('new', function (message) {
+    channel.subscribe(function (message) {
       $scope.itemsList.push(message.data);
       if ($scope.itemsList.length > 4) {
         $scope.itemsList = $scope.itemsList.splice(1); 
@@ -92,7 +78,7 @@
               resize: true
           });
 
-    channel.subscribe('new', function (message) {
+    channel.subscribe(function (message) {
       var item = angular.copy(message.data);
       item.date = item.timestamp.toJSON();
       data.push(item);
@@ -100,7 +86,6 @@
         data = data.splice(1); 
       }
       graph.setData(data);
-       
     });
 
     $scope.$on('destroy', function() {

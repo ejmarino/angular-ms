@@ -18,39 +18,31 @@ describe('Angular Message Service', () => {
       var channel: ngms.IChannel = ngmsMessageService.getChannel('testChannel');
       expect(channel.getName()).toEqual('testChannel');
     });
-    it('returns a new instance of topic with the specified name', () => {
-      var chName: string, tpName: string;
-      var topic: ngms.ITopic = ngmsMessageService.getTopic(chName, tpName);
-      expect(topic.getChannelName()).toEqual(chName);
-      expect(topic.getName()).toEqual(tpName);
-    });
     it('subscribes, publishes and unsubscribes to the allChannel\'s channel', () => {
       var data: any;
-      expect(ngmsMessageService.getRegistryStats().totalSubscriptions).toEqual(0);
-      var token = ngmsMessageService.subscribeAllChannels((message: ngms.IMessage, topicName: string, channelName: string) => {
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(0);
+      var token = ngmsMessageService.subscribe('*', (message: ngms.IMessage, channelName: string) => {
         data = {
           messageData: message['data'],
-          topic: topicName,
           channel: channelName
         };
       });
-      expect(ngmsMessageService.getRegistryStats().totalSubscriptions).toEqual(1);
-      var chTp: string[][] = [['test', 'test'], ['test', 'test2'], ['test2', 'test'], ['test2', 'test2']];
-      chTp.forEach((pair: string[]) => {
-        var topic = ngmsMessageService.getTopic(pair[0], pair[1]);
-        topic.publishSync('12345');
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(1);
+      var chs: string[] = ['test', 'test2', 'test3', 'test4'];
+      chs.forEach((ch: string) => {
+        var channel = ngmsMessageService.getChannel(ch);
+        channel.publishSync('12345');
         expect(data.messageData).toEqual('12345');
-        expect(data.channel).toEqual(pair[0]);
-        expect(data.topic).toEqual(pair[1]);
+        expect(data.channel).toEqual(ch);
       });
       data = undefined;
-      ngmsMessageService.unsubscribeAllChannels(token);
-      chTp.forEach((pair: string[]) => {
-        var topic = ngmsMessageService.getTopic(pair[0], pair[1]);
-        topic.publishSync('12345');
+      ngmsMessageService.unsubscribe(token);
+      chs.forEach((ch: string) => {
+        var channel = ngmsMessageService.getChannel(ch);
+        channel.publishSync('12345');
         expect(data).toBeUndefined();
       });
-      expect(ngmsMessageService.getRegistryStats().totalSubscriptions).toEqual(0);
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(0);
     });
   });
 

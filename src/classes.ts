@@ -12,124 +12,35 @@ module ngms {
     oneTime: boolean;
   }
 
-  class Topic implements ITopic {
-    private $channel: Channel;
-    private $topicName: string;
-
-    public constructor(channel: Channel, topicName: string) {
-      this.$channel = channel;
-      this.$topicName = topicName;
-    }
-
-    public getName(): string {
-      return this.$topicName;
-    }
-
-    public getChannelName(): string {
-      return this.$channel.getName();
-    }
-
-    public publishSync(message: string | IMessage): void {
-      this.$channel.publishSync(this.$topicName, message);
-    }
-
-    public publish(message: string | IMessage): ng.IPromise<void> {
-      return this.$channel.publish(this.$topicName, message);
-    }
-
-    public subscribe(callback: ICallback): IToken {
-      return this.$channel.subscribe(this.$topicName, callback);
-    }
-
-    public unsubscribe(token: IToken): void {
-      if (token.topicName !== this.$topicName) {
-        throw new Error('You can only unsubscribe tokens related to topic ' + this.$topicName);
-      }
-      this.$channel.unsubscribe(token);
-    }
-
-    public unsubscribeAll(): void {
-      var reg = this.$channel.getRegistry();
-      var subs = reg.getChannelSubs(this.$channel.getName());
-      subs[this.$topicName] = [];
-    }
-
+  interface IPatternSubscription extends ISubscription {
+    matchedChannels: string[];
   }
 
   class Channel implements IChannel {
-    private $registry: Registry;
+    private $messageService: MessageService;
     private $subscriptions: { [tokenId: string]: IToken } = {};
     private $channelName: string;
 
-    public constructor(channelName: string, registry: Registry) {
-      this.$registry = registry;
+    public constructor(channelName: string, messageService: MessageService) {
+      this.$messageService = messageService;
       this.$channelName = channelName;
-    }
-
-    public getRegistry(): Registry {
-      return this.$registry;
     }
 
     public getName() {
       return this.$channelName;
     }
 
-    public getDefaultTopic() {
-      return new Topic(this, this.$registry.$defaultTopicName);
+    public publishSync(message?: string | IMessage): void {
+      this.$messageService.publishSync(this.$channelName, message);
     }
 
-    public getTopic(topicName: string) {
-      return new Topic(this, topicName);
+    public publish(message: string | IMessage): ng.IPromise<void> {
+      return this.$messageService.publish(this.$channelName, message);
     }
 
-    public publishSync(topicName: string, message?: string | IMessage): void {
-      var msg = this.$ensureMessage(message);
-      this.$registry.publishSync(this.$channelName, topicName, msg);
-    }
-
-    public publish(topicName: string, message: string | IMessage): ng.IPromise<void> {
-      var msg = this.$ensureMessage(message);
-      return this.$registry.publish(this.$channelName, topicName, msg);
-    }
-
-    private $ensureMessage(message: string | IMessage): IMessage {
-      var msg: IMessage;
-      if (!message) {
-        msg = { $msgId: '' };
-      } else if (typeof message === 'string') {
-        msg = { data: message, $msgId: this.$registry.generateUUID() };
-      } else {
-        msg = message;
-        msg.$msgId = this.$registry.generateUUID();
-      }
-      return msg;
-    }
-
-    public subscribeAll(callback: ICallback): IToken {
-      return this.subscribe(this.$registry.$allTopicsName, callback);
-    }
-
-    public subscribe(topicName: string, callback: ICallback): IToken {
-      return this.$subscribe(topicName, callback, false);
-    }
-    public subscribeOneTime(topicName: string, callback: ICallback): IToken {
-      return this.$subscribe(topicName, callback, true);
-    }
-
-    private $subscribe(topicName: string, callback: ICallback, oneTime: boolean): IToken {
-      var tokenId = this.$registry.generateUUID();
-      var subs = this.$registry.getTopicSubs(this.$channelName, topicName);
-      var token: IToken = {
-        channelName: this.$channelName,
-        topicName: topicName,
-        tokenId: tokenId
-      };
-      subs.push({
-        token: token,
-        callback: callback,
-        oneTime: oneTime
-      });
-      this.$subscriptions[tokenId] = token;
+    public subscribe(callback: ICallback, oneTime?: boolean): IToken {
+      var token = this.$messageService.subscribe(this.$channelName, callback, oneTime);
+      this.$subscriptions[token.tokenId] = token;
       return token;
     }
 
@@ -145,76 +56,157 @@ module ngms {
       if (token.channelName !== this.$channelName) {
         throw new Error('You can only unsubscribe tokens related to channel ' + this.$channelName);
       }
-      this.$registry.removeToken(token);
+      this.$messageService.unsubscribe(token);
       delete this.$subscriptions[token.tokenId];
     }
   }
 
   class Registry {
+
+    public $simpleSubscribers: { [channelName: string]: ISubscription[] } = {};
+    public $patternSubscribers: { [channelPattern: string]: IPatternSubscription[] } = {};
+    public $patternRegex: { [channelPattern: string]: RegExp } = {};
+    public $allSubscribers: ISubscription[] = [];
+
     private $timeout: ng.ITimeoutService;
     private $q: ng.IQService;
-
-    public $allTopicsName: string = '$$all-topics';
-    public $allChannelsName: string = '$$all-channels';
-    public $defaultTopicName: string = '$$default-topic';
-
-    public $subscribers: { [channelName: string]: { [topicName: string]: ISubscription[] } } = {};
 
     public constructor($timeout: ng.ITimeoutService, $q: ng.IQService) {
       this.$timeout = $timeout;
       this.$q = $q;
     }
 
-    public getChannelSubs(channelName: string): { [topicName: string]: ISubscription[] } {
-      this.$subscribers[channelName] = this.$subscribers[channelName] || {};
-      return this.$subscribers[channelName];
+    public getSimpleSubs(channelName: string): ISubscription[] {
+      this.$simpleSubscribers[channelName] = this.$simpleSubscribers[channelName] || [];
+      return this.$simpleSubscribers[channelName];
     }
 
-    public getTopicSubs(channelName: string, topicName: string): ISubscription[] {
-      var channel = this.getChannelSubs(channelName);
-      channel[topicName] = channel[topicName] || [];
-      return channel[topicName];
+    public getPatternSubs(channelPattern: string): IPatternSubscription[] {
+      this.$patternSubscribers[channelPattern] = this.$patternSubscribers[channelPattern] || [];
+      return this.$patternSubscribers[channelPattern];
     }
 
-    public removeToken(token: IToken): void {
-      var subs = this.getTopicSubs(token.channelName, token.topicName);
-      var newList = subs.filter(function(subscriber: ISubscription) {
-        return subscriber.token.tokenId !== token.tokenId;
-      });
-      if (newList.length === 0) {
-        delete this.$subscribers[token.channelName][token.topicName];
-        if (Object.keys(this.$subscribers[token.channelName]).length === 0) {
-          delete this.$subscribers[token.channelName];
-        }
-      } else {
-        this.$subscribers[token.channelName][token.topicName] = newList;
-      }
-    }
-
-    public publishSync(channelName: string, topicName: string, message: IMessage): void {
-      var subs = this.$getSubscriptions(channelName, topicName);
+    public publishSync(channelName: string, message: IMessage): void {
+      var subs = this.getSubscriptions(channelName);
       subs.forEach(function(subscriber: ISubscription) {
-        subscriber.callback(message, topicName, channelName);
+        subscriber.callback(message, channelName);
       });
     }
 
-    public publish(channelName: string, topicName: string, message: IMessage): ng.IPromise<void> {
-      var subs = this.$getSubscriptions(channelName, topicName);
+    public publish(channelName: string, message: IMessage): ng.IPromise<void> {
       var self = this;
+      var subs = this.getSubscriptions(channelName);
       return new this.$q((): void => {
         self.$timeout(() => {
           subs.forEach(function(subscriber: ISubscription) {
-            subscriber.callback(message, topicName, channelName);
+            subscriber.callback(message, channelName);
           });
         }, 0);
       });
     }
 
-    private $getSubscriptions(channelName: string, topicName: string): ISubscription[] {
-      var topicSubs = this.getTopicSubs(channelName, topicName);
-      var allTopicSubs = this.getTopicSubs(channelName, this.$allTopicsName);
-      var allChannelsSubs = this.getTopicSubs(this.$allChannelsName, this.$allTopicsName);
-      return topicSubs.concat(allTopicSubs, allChannelsSubs);
+    public subscribe(channelName: string, callback: ICallback, oneTime?: boolean): IToken {
+      var self = this;
+      var subs: ISubscription[];
+      var sub: ISubscription;
+      var tokenId = this.generateUUID();
+      var token: IToken = {
+        channelName: channelName,
+        tokenId: tokenId
+      };
+      sub = { token: token, callback: callback, oneTime: !!oneTime };
+      if (channelName = '*') {
+        // all-Channels Channel Name
+        subs = this.$allSubscribers;
+      } else if (channelName.indexOf('*') === -1) {
+        // single Channel Name
+        subs = this.getSimpleSubs(channelName);
+      } else {
+        // pattern Matching Channel Name
+        sub.oneTime = false;
+        var regexp = this.$patternRegex[channelName];
+        if (!regexp) {
+          regexp = new RegExp(channelName.replace(/\*/g, '.*').replace(/\./g, '\\.'), 'i');
+          this.$patternRegex[channelName] = regexp;
+        }
+        subs = this.getPatternSubs(channelName);
+        (<IPatternSubscription> sub).matchedChannels = this.getMatchedChannels(regexp);
+        (<IPatternSubscription> sub).matchedChannels.forEach((channelName: string) => {
+          var ssubs = self.getSimpleSubs(channelName);
+          ssubs.push(sub);
+        });
+      }
+      subs.push(sub);
+      return token;
+    }
+
+    private getMatchedChannels(regexp: RegExp): string[] {
+      return Object.keys(this.$simpleSubscribers).filter((channelName: string): boolean => {
+        return regexp.test(channelName);
+      });
+    }
+
+
+    public getSubscriptions(channelName: string): ISubscription[] {
+      var subs = this.getSimpleSubs(channelName);
+      if (subs.length === 0) {
+        var psubs = this.getMatchedPatSubs(channelName);
+        psubs.forEach((psub: IPatternSubscription) => {
+          psub.matchedChannels.push(channelName);
+          subs.push(psub);
+        });
+      }
+      return subs.concat(this.$allSubscribers);
+    }
+
+    private getMatchedPatSubs(channelName: string): IPatternSubscription[] {
+      var result: IPatternSubscription[] = [];
+      Object.keys(this.$patternSubscribers).forEach((patternName: string): void => {
+        var regexp = this.$patternRegex[patternName];
+        if (regexp.test(channelName)) {
+          result = result.concat(this.$patternSubscribers[patternName]);
+        }
+      });
+      return result;
+    }
+
+
+    public removeToken(token: IToken): void {
+      var self = this;
+      var subs: ISubscription[];
+      if (token.channelName = '*') {
+        // all-Channels Channel Name
+        subs = this.$allSubscribers;
+      } else if (token.channelName.indexOf('*') === -1) {
+        // single Channel Name
+        subs = this.getSimpleSubs(token.channelName);
+      } else {
+        // pattern Matching Channel Name
+        var psubs = this.getPatternSubs(token.channelName);
+        var newPList = psubs.filter((psub: IPatternSubscription) => {
+          if (psub.token.tokenId === token.tokenId) {
+            psub.matchedChannels.forEach((channelName: string) => {
+              self.removeToken({ channelName: channelName, tokenId: psub.token.tokenId });
+            });
+            return false;
+          }
+          return true;
+        });
+        if (newPList.length === 0) {
+          delete this.$simpleSubscribers[token.channelName];
+        } else {
+          this.$patternSubscribers[token.channelName] = newPList;
+        }
+        return;
+      }
+      var newList = subs.filter((subscriber: ISubscription) => {
+        return subscriber.token.tokenId !== token.tokenId;
+      });
+      if (newList.length === 0) {
+        delete this.$simpleSubscribers[token.channelName];
+      } else {
+        this.$simpleSubscribers[token.channelName] = newList;
+      }
     }
 
     public generateUUID() {
@@ -228,6 +220,7 @@ module ngms {
       });
       return uuid;
     }
+
   }
 
   class MessageService implements IMessageService {
@@ -238,70 +231,74 @@ module ngms {
     }
 
     public getChannel(channelName: string): IChannel {
-      return new Channel(channelName, this.$registry);
+      return new Channel(channelName, this);
     }
 
-    public getTopic(channelName: string, topicName: string): ITopic {
-      return new Channel(channelName, this.$registry).getTopic(topicName);
-    }
-
-    public subscribeAllChannelsOneTime(callback: ICallback): IToken {
-      return this.$subscribeAllChannels(callback, true);
-    }
-
-    public subscribeAllChannels(callback: ICallback): IToken {
-      return this.$subscribeAllChannels(callback, false);
-    }
-
-    private $subscribeAllChannels(callback: ICallback, oneTime: boolean): IToken {
-      var tokenId = this.$registry.generateUUID();
-      var subs = this.$registry.getTopicSubs(this.$registry.$allChannelsName, this.$registry.$allTopicsName);
-      var token: IToken = {
-        channelName: this.$registry.$allChannelsName,
-        topicName: this.$registry.$allTopicsName,
-        tokenId: tokenId
-      };
-      subs.push({
-        token: token,
-        callback: callback,
-        oneTime: false
-      });
-      return token;
-    }
-
-    public unsubscribeAllChannels(token: IToken) {
-      if (token.channelName !== this.$registry.$allChannelsName && token.topicName !== this.$registry.$allTopicsName) {
-        throw new Error('MessageService only allows unsubscribe to all-channels subscriptions');
+    public publishSync(channelName: string, message: string | IMessage): void {
+      if (channelName.indexOf('*') !== -1) {
+        throw new Error('Invalid channel name. You must specify a channel name without wilcards.');
       }
+      var msg = this.$ensureMessage(message);
+      return this.$registry.publishSync(channelName, msg);
+    }
+
+    public publish(channelName: string, message: string | IMessage): ng.IPromise<void> {
+      if (channelName.indexOf('*') !== -1) {
+        throw new Error('Invalid channel name. You must specify a channel name without wilcards.');
+      }
+      var msg = this.$ensureMessage(message);
+      return this.$registry.publish(channelName, msg);
+    }
+
+    private $ensureMessage(message: string | IMessage): IMessage {
+      var msg: IMessage;
+      if (!message) {
+        msg = { $msgId: '' };
+      } else if (typeof message === 'string') {
+        msg = { data: message, $msgId: this.$registry.generateUUID() };
+      } else {
+        msg = message;
+        msg.$msgId = this.$registry.generateUUID();
+      }
+      return msg;
+    }
+
+
+    public subscribe(channelName: string, callback: ICallback, oneTime?: boolean): IToken {
+      return this.$registry.subscribe(channelName, callback, oneTime);
+    }
+
+    public unsubscribe(token: IToken) {
       this.$registry.removeToken(token);
     }
 
-    public getRegistryStats(): any {
+    public getServiceStats(): any {
       var stats: any = {};
       var self = this;
-      stats.totalChannels = Object.keys(this.$registry.$subscribers).length;
-      stats.totalTopics = 0;
+      stats.totalChannels = Object.keys(this.$registry.$simpleSubscribers).length;
       stats.totalSubscriptions = 0;
       stats.channels = [];
-      Object.keys(this.$registry.$subscribers).forEach((channelName: string) => {
-        var channel = self.$registry.$subscribers[channelName];
+      Object.keys(this.$registry.$simpleSubscribers).forEach((channelName: string) => {
+        var subs = self.$registry.$simpleSubscribers[channelName];
         var chStat: any = {};
         chStat.name = channelName;
-        chStat.totalTopics = Object.keys(channel).length;
-        chStat.totalSubscriptions = 0;
-        chStat.topics = [];
-        Object.keys(channel).forEach((topicName: string) => {
-          var topic = channel[topicName];
-          var tpStat: any = {};
-          tpStat.name = topicName;
-          tpStat.totalSubscriptions = topic.length;
-          chStat.totalSubscriptions += topic.length;
-          chStat.topics.push(tpStat);
-        });
-        stats.totalTopics += chStat.totalTopics;
+        chStat.totalSubscriptions = subs.length;
         stats.totalSubscriptions += chStat.totalSubscriptions;
         stats.channels.push(chStat);
       });
+      stats.totalSubscriptions += this.$registry.$allSubscribers.length;
+      stats.globalSubscriptions = this.$registry.$allSubscribers.length;
+      stats.patternSubscriptions = [];
+      Object.keys(this.$registry.$patternSubscribers).forEach((channelPattern: string) => {
+        var psubs = self.$registry.$patternSubscribers[channelPattern];
+        var psStat: any = {};
+        psStat.name = channelPattern;
+        psStat.totalSubscriptions = psubs.length;
+        psStat.channelsMatched = psubs[0].matchedChannels;
+        stats.totalSubscriptions += psStat.totalSubscriptions;
+        stats.patternSubscriptions.push(psStat);
+      });
+
       return stats;
     }
   }
