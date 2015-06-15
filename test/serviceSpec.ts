@@ -4,33 +4,69 @@
 
 describe('Angular Message Service', () => {
 
-  beforeEach(() => {
-    window['jasmine'].DEFAULT_TIMEOUT_INTERVAL = 500;
-  });
+  var ngmsMessageService: ngms.IMessageService;
+  var $timeout: ng.ITimeoutService;
 
   beforeEach(module('ngms'));
 
-  var ngmsMessageService: ngms.IMessageService;
+  beforeEach(inject((_$timeout_: ng.ITimeoutService) => {
+    $timeout = _$timeout_;
+  }));
 
   beforeEach(inject((_ngmsMessageService_: ngms.IMessageService) => {
-    // the injector unwraps the underscores (_) from around the parameter names when matching
     ngmsMessageService = _ngmsMessageService_;
   }));
 
   describe('Single Channel Tests', () => {
-    it('subcribe, publish and unsubscribe a single channel', () => {
-      var channel = ngmsMessageService.getChannel('testChannel');
-      expect(channel.getName()).toEqual('testChannel');
+
+    var channel: ngms.IChannel;
+
+    beforeEach(() => {
+      channel = ngmsMessageService.getChannel('testChannel');
+    });
+
+    afterEach(() => { channel.unsubscribeAll(); });
+
+    it('Subcribe, publish and unsubscribe a single channel', () => {
+      var cnt: number = 0;
       var tkn = channel.subscribe((msg: ngms.IMessage, channel: string) => {
+        cnt++;
         expect(channel).toEqual('testChannel');
         expect(msg).toBeDefined();
         expect(msg.$msgId).toBeDefined();
         expect(msg['data']).toEqual('1029384756');
       });
-      channel.publishSync({ data: '1029384756' });
+      expect(tkn).toBeDefined();
+      expect(tkn.channelName).toEqual('testChannel');
+      channel.publish({ data: '1029384756' });
+      $timeout.flush();
+      expect(cnt).toEqual(1);
       channel.unsubscribe(tkn);
+      channel.publish();
+      expect(cnt).toEqual(1);
     });
+
+    it('Desubscribes automatically after one publish occur', () => {
+      var cnt: number = 0;
+      var tkn = channel.subscribe((msg: ngms.IMessage, channel: string) => {
+        cnt++;
+        expect(channel).toEqual('testChannel');
+        expect(msg).toBeDefined();
+        expect(msg.$msgId).toBeDefined();
+        expect(msg['data']).toEqual('1029384756');
+      }, true);
+      expect(tkn).toBeDefined();
+      expect(tkn.channelName).toEqual('testChannel');
+      channel.publish({ data: '1029384756' });
+      $timeout.flush();
+      expect(cnt).toEqual(1);
+      channel.publish({ data: '1029384756' });
+      $timeout.flush();
+      expect(cnt).toEqual(1);
+    });
+
   });
+
   /*
   describe('Message service methods', () => {
     it('returns a new instance of channel with the specified name', () => {

@@ -88,9 +88,7 @@ module ngms {
 
     public publishSync(channelName: string, message: IMessage): void {
       var subs = this.getSubscriptions(channelName);
-      subs.forEach(function(subscriber: ISubscription) {
-        subscriber.callback(message, channelName);
-      });
+      this.$publish(subs,message, channelName, this);
     }
 
     public publish(channelName: string, message: IMessage): ng.IPromise<any> {
@@ -99,16 +97,23 @@ module ngms {
       var defer = this.$q.defer();
 
       self.$timeout(() => {
-          try {
-            subs.forEach(function(subscriber: ISubscription) {
-              subscriber.callback(message, channelName);
-            });
-            defer.resolve();
-          } catch (e) {
-            defer.reject(e);
-          }
-        }, 0);
+        try {
+          self.$publish(subs,message, channelName, self);
+          defer.resolve();
+        } catch (e) {
+          defer.reject(e);
+        }
+      }, 0);
       return defer.promise;
+    }
+
+    private $publish(subscriptions: ISubscription[], message: IMessage, channelName: string, self: Registry) {
+      subscriptions.forEach((subscriber: ISubscription) => {
+        subscriber.callback(message, channelName);
+        if (subscriber.oneTime) {
+          self.removeToken(subscriber.token);
+        }
+      });
     }
 
     public subscribe(channelName: string, callback: ICallback, oneTime?: boolean): IToken {
@@ -121,7 +126,7 @@ module ngms {
         tokenId: tokenId
       };
       sub = { token: token, callback: callback, oneTime: !!oneTime };
-      if (channelName = '*') {
+      if (channelName === '*') {
         // all-Channels Channel Name
         subs = this.$allSubscribers;
       } else if (channelName.indexOf('*') === -1) {
@@ -161,7 +166,11 @@ module ngms {
           subs.push(psub);
         });
       }
-      return subs.concat(this.$allSubscribers);
+      if (this.$allSubscribers.length > 0) {
+        return subs.concat(this.$allSubscribers);
+      } else {
+        return subs;
+      }
     }
 
     private getMatchedPatSubs(channelName: string): IPatternSubscription[] {
@@ -175,11 +184,10 @@ module ngms {
       return result;
     }
 
-
     public removeToken(token: IToken): void {
       var self = this;
       var subs: ISubscription[];
-      if (token.channelName = '*') {
+      if (token.channelName === '*') {
         // all-Channels Channel Name
         subs = this.$allSubscribers;
       } else if (token.channelName.indexOf('*') === -1) {

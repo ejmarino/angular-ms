@@ -63,9 +63,7 @@ var ngms;
         };
         Registry.prototype.publishSync = function (channelName, message) {
             var subs = this.getSubscriptions(channelName);
-            subs.forEach(function (subscriber) {
-                subscriber.callback(message, channelName);
-            });
+            this.$publish(subs, message, channelName, this);
         };
         Registry.prototype.publish = function (channelName, message) {
             var self = this;
@@ -73,9 +71,7 @@ var ngms;
             var defer = this.$q.defer();
             self.$timeout(function () {
                 try {
-                    subs.forEach(function (subscriber) {
-                        subscriber.callback(message, channelName);
-                    });
+                    self.$publish(subs, message, channelName, self);
                     defer.resolve();
                 }
                 catch (e) {
@@ -83,6 +79,14 @@ var ngms;
                 }
             }, 0);
             return defer.promise;
+        };
+        Registry.prototype.$publish = function (subscriptions, message, channelName, self) {
+            subscriptions.forEach(function (subscriber) {
+                subscriber.callback(message, channelName);
+                if (subscriber.oneTime) {
+                    self.removeToken(subscriber.token);
+                }
+            });
         };
         Registry.prototype.subscribe = function (channelName, callback, oneTime) {
             var self = this;
@@ -94,7 +98,7 @@ var ngms;
                 tokenId: tokenId
             };
             sub = { token: token, callback: callback, oneTime: !!oneTime };
-            if (channelName = '*') {
+            if (channelName === '*') {
                 subs = this.$allSubscribers;
             }
             else if (channelName.indexOf('*') === -1) {
@@ -131,7 +135,12 @@ var ngms;
                     subs.push(psub);
                 });
             }
-            return subs.concat(this.$allSubscribers);
+            if (this.$allSubscribers.length > 0) {
+                return subs.concat(this.$allSubscribers);
+            }
+            else {
+                return subs;
+            }
         };
         Registry.prototype.getMatchedPatSubs = function (channelName) {
             var _this = this;
@@ -147,7 +156,7 @@ var ngms;
         Registry.prototype.removeToken = function (token) {
             var self = this;
             var subs;
-            if (token.channelName = '*') {
+            if (token.channelName === '*') {
                 subs = this.$allSubscribers;
             }
             else if (token.channelName.indexOf('*') === -1) {
