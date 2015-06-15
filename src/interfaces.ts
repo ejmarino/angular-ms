@@ -6,7 +6,7 @@ module ngms {
   export interface IMessageService {
     getChannel(channelName: string): IChannel;
     publishSync(channelName: string, message?: string | IMessage): void;
-    publish(channelName: string, message?: string | IMessage): ng.IPromise<void>;
+    publish(channelName: string, message?: string | IMessage): ng.IPromise<any>;
     subscribe(channelName: string, callback: ICallback, oneTime?: boolean): IToken;
     unsubscribe(token: IToken): void;
     getServiceStats(): any;
@@ -25,7 +25,7 @@ module ngms {
   export interface IChannel {
     getName(): string;
     publishSync(message?: string | IMessage): void;
-    publish(message?: string | IMessage): ng.IPromise<void>;
+    publish(message?: string | IMessage): ng.IPromise<any>;
     subscribe(callback: ICallback, oneTime?: boolean): IToken;
     unsubscribe(token: IToken): void;
     unsubscribeAll(): void;

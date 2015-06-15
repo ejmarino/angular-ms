@@ -70,13 +70,19 @@ var ngms;
         Registry.prototype.publish = function (channelName, message) {
             var self = this;
             var subs = this.getSubscriptions(channelName);
-            return new this.$q(function () {
-                self.$timeout(function () {
+            var defer = this.$q.defer();
+            self.$timeout(function () {
+                try {
                     subs.forEach(function (subscriber) {
                         subscriber.callback(message, channelName);
                     });
-                }, 0);
-            });
+                    defer.resolve();
+                }
+                catch (e) {
+                    defer.reject(e);
+                }
+            }, 0);
+            return defer.promise;
         };
         Registry.prototype.subscribe = function (channelName, callback, oneTime) {
             var self = this;
@@ -117,7 +123,7 @@ var ngms;
             });
         };
         Registry.prototype.getSubscriptions = function (channelName) {
-            var subs = this.getSimpleSubs(channelName);
+            var subs = angular.copy(this.getSimpleSubs(channelName));
             if (subs.length === 0) {
                 var psubs = this.getMatchedPatSubs(channelName);
                 psubs.forEach(function (psub) {

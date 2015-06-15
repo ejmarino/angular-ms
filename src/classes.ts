@@ -93,16 +93,22 @@ module ngms {
       });
     }
 
-    public publish(channelName: string, message: IMessage): ng.IPromise<void> {
+    public publish(channelName: string, message: IMessage): ng.IPromise<any> {
       var self = this;
       var subs = this.getSubscriptions(channelName);
-      return new this.$q((): void => {
-        self.$timeout(() => {
-          subs.forEach(function(subscriber: ISubscription) {
-            subscriber.callback(message, channelName);
-          });
+      var defer = this.$q.defer();
+
+      self.$timeout(() => {
+          try {
+            subs.forEach(function(subscriber: ISubscription) {
+              subscriber.callback(message, channelName);
+            });
+            defer.resolve();
+          } catch (e) {
+            defer.reject(e);
+          }
         }, 0);
-      });
+      return defer.promise;
     }
 
     public subscribe(channelName: string, callback: ICallback, oneTime?: boolean): IToken {
@@ -146,9 +152,8 @@ module ngms {
       });
     }
 
-
     public getSubscriptions(channelName: string): ISubscription[] {
-      var subs = this.getSimpleSubs(channelName);
+      var subs = angular.copy(this.getSimpleSubs(channelName));
       if (subs.length === 0) {
         var psubs = this.getMatchedPatSubs(channelName);
         psubs.forEach((psub: IPatternSubscription) => {

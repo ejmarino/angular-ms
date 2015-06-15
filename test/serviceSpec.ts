@@ -4,6 +4,10 @@
 
 describe('Angular Message Service', () => {
 
+  beforeEach(() => {
+    window['jasmine'].DEFAULT_TIMEOUT_INTERVAL = 500;
+  });
+
   beforeEach(module('ngms'));
 
   var ngmsMessageService: ngms.IMessageService;
@@ -13,6 +17,21 @@ describe('Angular Message Service', () => {
     ngmsMessageService = _ngmsMessageService_;
   }));
 
+  describe('Single Channel Tests', () => {
+    it('subcribe, publish and unsubscribe a single channel', () => {
+      var channel = ngmsMessageService.getChannel('testChannel');
+      expect(channel.getName()).toEqual('testChannel');
+      var tkn = channel.subscribe((msg: ngms.IMessage, channel: string) => {
+        expect(channel).toEqual('testChannel');
+        expect(msg).toBeDefined();
+        expect(msg.$msgId).toBeDefined();
+        expect(msg['data']).toEqual('1029384756');
+      });
+      channel.publishSync({ data: '1029384756' });
+      channel.unsubscribe(tkn);
+    });
+  });
+  /*
   describe('Message service methods', () => {
     it('returns a new instance of channel with the specified name', () => {
       var channel: ngms.IChannel = ngmsMessageService.getChannel('testChannel');
@@ -46,5 +65,5 @@ describe('Angular Message Service', () => {
     });
   });
 
-
+  */
 });
