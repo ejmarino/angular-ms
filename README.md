@@ -27,8 +27,8 @@ Anyone who wants to get involved in a communication needs a **Channel**. All cha
 
 ###Example
 ```js
-// get the 'Model.Contact' channel
-var channel = ngmsMessageService.getChannel('model');
+// get the 'model.contact' channel
+var channel = ngmsMessageService.getChannel('model.contact');
 ```
 This channel have information about the changes of 'contacts' entities
 
