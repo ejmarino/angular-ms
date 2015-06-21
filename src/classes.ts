@@ -288,7 +288,9 @@ module ngms {
     public getServiceStats(): any {
       var stats: any = {};
       var self = this;
-      stats.totalChannels = Object.keys(this.$registry.$simpleSubscribers).length;
+      stats.simpleChannels = Object.keys(this.$registry.$simpleSubscribers).length;
+      stats.patternChannels = Object.keys(this.$registry.$patternSubscribers).length;
+      stats.globalSubscriptions = this.$registry.$allSubscribers.length;
       stats.totalSubscriptions = 0;
       stats.channels = [];
       Object.keys(this.$registry.$simpleSubscribers).forEach((channelName: string) => {
@@ -299,16 +301,17 @@ module ngms {
         stats.totalSubscriptions += chStat.totalSubscriptions;
         stats.channels.push(chStat);
       });
+      stats.totalButGlobalSubscriptions = stats.totalSubscriptions;
       stats.totalSubscriptions += this.$registry.$allSubscribers.length;
-      stats.globalSubscriptions = this.$registry.$allSubscribers.length;
-      stats.patternSubscriptions = [];
+      stats.patternSubscriptions = 0;
+      stats.patternChannels = [];
       Object.keys(this.$registry.$patternSubscribers).forEach((channelPattern: string) => {
         var psubs = self.$registry.$patternSubscribers[channelPattern];
         var psStat: any = {};
         psStat.name = channelPattern;
         psStat.totalSubscriptions = psubs.length;
         psStat.channelsMatched = psubs[0].matchedChannels;
-        stats.totalSubscriptions += psStat.totalSubscriptions;
+        stats.patternSubscriptions += psStat.totalSubscriptions;
         stats.patternSubscriptions.push(psStat);
       });
 

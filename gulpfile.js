@@ -43,7 +43,7 @@ function prepareTestScripts() {
     var tsResult = gulp.src(['test/*.ts'])
         .pipe(ts(
         {
-            removeComments: true,
+            removeComments: false,
             noImplicitAny: true
         }
         ));
@@ -64,9 +64,9 @@ function test() {
         configFile: 'test/karma.conf.js',
         action: 'run'
     }))
-    .on('error', function(err) {
-    // Make sure failed tests cause gulp to exit non-zero 
-    throw err;
+        .on('error', function (err) {
+        // Make sure failed tests cause gulp to exit non-zero 
+        throw err;
     });
 }
 
@@ -86,9 +86,9 @@ function testWatch() {
     }));
 }
 
-gulp.task('prepare-test-scripts', ['prepare-scripts'], prepareTestScripts);
+gulp.task('prepare-test-scripts', prepareTestScripts);
 
-gulp.task('test', ['prepare-test-scripts'], test);
+gulp.task('test', ['prepare-scripts'], test);
 
 gulp.task('test-watch', testWatch);
 
@@ -96,7 +96,7 @@ gulp.task('default', ['build']);
 
 gulp.task('build', ['prepare-demo', 'prepare-scripts']);
 
-gulp.task('prepare-scripts', ['checkSyntax'], prepareScripts);
+gulp.task('prepare-scripts', ['prepare-test-scripts', 'checkSyntax'], prepareScripts);
 
 gulp.task('checkSyntax', checkSyntax);
 

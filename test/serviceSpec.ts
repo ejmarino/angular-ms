@@ -27,7 +27,7 @@ describe('Angular Message Service', () => {
 
     afterEach(() => { channel.unsubscribeAll(); });
 
-    it('Subcribe, publish and unsubscribe a single channel', () => {
+    it('Subscribe, publish and unsubscribe a single channel', () => {
       var cnt: number = 0;
       var tkn = channel.subscribe((msg: ngms.IMessage, channel: string) => {
         cnt++;
@@ -38,10 +38,12 @@ describe('Angular Message Service', () => {
       });
       expect(tkn).toBeDefined();
       expect(tkn.channelName).toEqual('testChannel');
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(1);
       channel.publish({ data: '1029384756' });
       $timeout.flush();
       expect(cnt).toEqual(1);
       channel.unsubscribe(tkn);
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(0);
       channel.publish();
       expect(cnt).toEqual(1);
     });
@@ -57,13 +59,78 @@ describe('Angular Message Service', () => {
       }, true);
       expect(tkn).toBeDefined();
       expect(tkn.channelName).toEqual('testChannel');
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(1);
       channel.publish({ data: '1029384756' });
       $timeout.flush();
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(0);
       expect(cnt).toEqual(1);
       channel.publish({ data: '1029384756' });
       $timeout.flush();
-      expect(cnt).toEqual(1);
     });
+
+    it('Subs. Pub. Desubs. multiple channels half with oneTime enabled', () => {
+      var cnt: { [ch: string]: number } = {};
+      var subs = 100;
+      var channels = ['test1', 'test2', 'test3', 'test4', 'test5', 'test6'];
+      var t: ngms.IToken[] = [];
+      var cb: ngms.ICallback = (msg: ngms.IMessage, ch: string): void => {
+        cnt[ch] = cnt[ch] || 0;
+        cnt[ch]++;
+      };
+
+      var i: number;
+
+      // subscribe 100 subcriptions for every channel
+      for (i = 0; i < subs; i++) {
+        channels.forEach((ch: string) => {
+          t.push(ngmsMessageService.subscribe(ch, cb));
+        });
+      }
+      // subscribe 100 subcriptions for every channel with oneTime enabled
+      for (i = 0; i < subs; i++) {
+        channels.forEach((ch: string) => {
+          ngmsMessageService.subscribe(ch, cb, true);
+        });
+      }
+
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(t.length * 2);
+
+      // Publish and expect count of 200 for every channel
+      channels.forEach((ch: string) => {
+        ngmsMessageService.publishSync(ch);
+      });
+
+      channels.forEach((ch: string) => {
+        expect(cnt[ch]).toEqual(subs*2);
+      });
+
+      // expect the autodesubscription 100 oneTime subscriptions
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(t.length);
+
+      channels.forEach((ch: string) => {
+        ngmsMessageService.publishSync(ch);
+      });
+
+      // check that only half has called
+      channels.forEach((ch: string) => {
+        expect(cnt[ch]).toEqual(subs*3);
+      });
+
+      // unsubscribe remainings
+      t.forEach((token: ngms.IToken) => { ngmsMessageService.unsubscribe(token); });
+
+      expect(ngmsMessageService.getServiceStats().totalSubscriptions).toEqual(0);
+
+      channels.forEach((ch: string) => {
+        ngmsMessageService.publishSync(ch);
+      });
+
+      channels.forEach((ch: string) => {
+        expect(cnt[ch]).toEqual(subs*3);
+      });
+
+    });
+
 
   });
 

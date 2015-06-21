@@ -63,9 +63,7 @@ var ngms;
         };
         Registry.prototype.publishSync = function (channelName, message) {
             var subs = this.getSubscriptions(channelName);
-            subs.forEach(function (subscriber) {
-                subscriber.callback(message, channelName);
-            });
+            this.$publish(subs, message, channelName, this);
         };
         Registry.prototype.publish = function (channelName, message) {
             var self = this;
@@ -73,9 +71,7 @@ var ngms;
             var defer = this.$q.defer();
             self.$timeout(function () {
                 try {
-                    subs.forEach(function (subscriber) {
-                        subscriber.callback(message, channelName);
-                    });
+                    self.$publish(subs, message, channelName, self);
                     defer.resolve();
                 }
                 catch (e) {
@@ -83,6 +79,14 @@ var ngms;
                 }
             }, 0);
             return defer.promise;
+        };
+        Registry.prototype.$publish = function (subscriptions, message, channelName, self) {
+            subscriptions.forEach(function (subscriber) {
+                subscriber.callback(message, channelName);
+                if (subscriber.oneTime) {
+                    self.removeToken(subscriber.token);
+                }
+            });
         };
         Registry.prototype.subscribe = function (channelName, callback, oneTime) {
             var self = this;
@@ -242,7 +246,9 @@ var ngms;
         MessageService.prototype.getServiceStats = function () {
             var stats = {};
             var self = this;
-            stats.totalChannels = Object.keys(this.$registry.$simpleSubscribers).length;
+            stats.simpleChannels = Object.keys(this.$registry.$simpleSubscribers).length;
+            stats.patternChannels = Object.keys(this.$registry.$patternSubscribers).length;
+            stats.globalSubscriptions = this.$registry.$allSubscribers.length;
             stats.totalSubscriptions = 0;
             stats.channels = [];
             Object.keys(this.$registry.$simpleSubscribers).forEach(function (channelName) {
@@ -253,16 +259,17 @@ var ngms;
                 stats.totalSubscriptions += chStat.totalSubscriptions;
                 stats.channels.push(chStat);
             });
+            stats.totalButGlobalSubscriptions = stats.totalSubscriptions;
             stats.totalSubscriptions += this.$registry.$allSubscribers.length;
-            stats.globalSubscriptions = this.$registry.$allSubscribers.length;
-            stats.patternSubscriptions = [];
+            stats.patternSubscriptions = 0;
+            stats.patternChannels = [];
             Object.keys(this.$registry.$patternSubscribers).forEach(function (channelPattern) {
                 var psubs = self.$registry.$patternSubscribers[channelPattern];
                 var psStat = {};
                 psStat.name = channelPattern;
                 psStat.totalSubscriptions = psubs.length;
                 psStat.channelsMatched = psubs[0].matchedChannels;
-                stats.totalSubscriptions += psStat.totalSubscriptions;
+                stats.patternSubscriptions += psStat.totalSubscriptions;
                 stats.patternSubscriptions.push(psStat);
             });
             return stats;

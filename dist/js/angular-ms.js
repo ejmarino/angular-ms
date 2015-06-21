@@ -246,7 +246,9 @@ var ngms;
         MessageService.prototype.getServiceStats = function () {
             var stats = {};
             var self = this;
-            stats.totalChannels = Object.keys(this.$registry.$simpleSubscribers).length;
+            stats.simpleChannels = Object.keys(this.$registry.$simpleSubscribers).length;
+            stats.patternChannels = Object.keys(this.$registry.$patternSubscribers).length;
+            stats.globalSubscriptions = this.$registry.$allSubscribers.length;
             stats.totalSubscriptions = 0;
             stats.channels = [];
             Object.keys(this.$registry.$simpleSubscribers).forEach(function (channelName) {
@@ -257,16 +259,17 @@ var ngms;
                 stats.totalSubscriptions += chStat.totalSubscriptions;
                 stats.channels.push(chStat);
             });
+            stats.totalButGlobalSubscriptions = stats.totalSubscriptions;
             stats.totalSubscriptions += this.$registry.$allSubscribers.length;
-            stats.globalSubscriptions = this.$registry.$allSubscribers.length;
-            stats.patternSubscriptions = [];
+            stats.patternSubscriptions = 0;
+            stats.patternChannels = [];
             Object.keys(this.$registry.$patternSubscribers).forEach(function (channelPattern) {
                 var psubs = self.$registry.$patternSubscribers[channelPattern];
                 var psStat = {};
                 psStat.name = channelPattern;
                 psStat.totalSubscriptions = psubs.length;
                 psStat.channelsMatched = psubs[0].matchedChannels;
-                stats.totalSubscriptions += psStat.totalSubscriptions;
+                stats.patternSubscriptions += psStat.totalSubscriptions;
                 stats.patternSubscriptions.push(psStat);
             });
             return stats;
