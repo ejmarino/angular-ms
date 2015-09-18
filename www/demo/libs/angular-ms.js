@@ -206,6 +206,7 @@ var ngms;
         function MessageService($timeout, $q) {
             this.$registry = new Registry($timeout, $q);
         }
+        MessageService.$inject = ["$timeout", "$q"];
         MessageService.prototype.getChannel = function (channelName) {
             return new Channel(channelName, this);
         };

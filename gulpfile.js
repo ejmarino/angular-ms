@@ -9,8 +9,8 @@ var merge = require('merge2');
 var del = require('del');
 
 function prepareDemo() {
-    return gulp.src(['bower_components/angular/angular.js', 'dist/js/angular-ms.js'])
-        .pipe(gulp.dest('demo/libs'));
+    return gulp.src(['bower_components/angular/angular.js', 'dist/js/angular-ms.js', 'dist/js/angular-ms.min.js'])
+        .pipe(gulp.dest('www/demo/libs'));
 }
 
 function checkSyntax() {
