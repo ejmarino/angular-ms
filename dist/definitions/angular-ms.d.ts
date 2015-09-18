@@ -25,7 +25,7 @@ declare module ngms {
         unsubscribeAll(): void;
     }
     interface ICallback {
-        (message: IMessage, topicName?: string, channelName?: string): void;
+        (message: IMessage, channelName?: string): void;
     }
 }
 declare module ngms {

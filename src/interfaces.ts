@@ -32,7 +32,7 @@ module ngms {
   }
 
   export interface ICallback {
-    (message: IMessage, topicName?: string, channelName?: string): void;
+    (message: IMessage, channelName?: string): void;
   }
 
 }

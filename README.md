@@ -54,7 +54,9 @@ If you are in a controller:
 
 ```js
 $scope.$on('destroy',function() {
-    topic.unsubscribe(token);
+    ngmsMessageService.unsubscribe(token);
+    ngmsMessageService.unsubscribe(token2);
+    ngmsMessageService.unsubscribe(token3);
 });
 ```
 Using a **Channel** object have an extra facility: they store every subscription made with that instance, so you can call `channel.unsubscribeAll()` and forget worring about keeping tokens.
@@ -65,13 +67,14 @@ $scope.$on('destroy',function() {
     channel.unsubscribeAll();
 });
 ```
-Messages are the payload of the channels. Every message is a key/value bag of anything you want. Every message have an identity value in $msgId property that identify the message as unique.
 
 ### The message 
 
+Messages are the payload of the channels. Every message is a key/value bag of anything you want. Every message have an identity value in $msgId property that identify the message as unique.
+
 Message instance that is broadcasted to the channel and passed to every subscriptor is then same instance that the publisher used. For performance reasons it is not copied. Beware of make any change to the message. If you change the message object maybe some other subscriptor will access the altered version. If you need to do some work on the data received, you must copy it beforehand.
 
-Subscriptor's callback function channel name along with the message. You can use the same callback for multiple channels and read the channel name inside the callback. 
+Subscriptor's callback function include channel name along with the message. You can use the same callback for multiple channels and read the channel name inside the callback. 
 The full callback function is `function callback(message, channelName)`.
 
 Source code are written in Typescript so you have type definitions for everything in the module.
