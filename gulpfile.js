@@ -2,6 +2,7 @@ var gulp = require('gulp');
 var uglify = require('gulp-uglify');
 var tslint = require('gulp-tslint');
 var rename = require('gulp-rename');
+var ngAnnotate = require('gulp-ng-annotate');
 var karma = require('gulp-karma');
 var ts = require('gulp-typescript');
 var merge = require('merge2');
@@ -32,7 +33,9 @@ function prepareScripts() {
 
     return merge([
         tsResult.dts.pipe(gulp.dest('dist/definitions')),
-        tsResult.js.pipe(gulp.dest('dist/js'))
+        tsResult.js
+            .pipe(ngAnnotate())
+            .pipe(gulp.dest('dist/js'))
             .pipe(rename({ suffix: '.min' }))
             .pipe(uglify())
             .pipe(gulp.dest('dist/js'))
@@ -54,7 +57,7 @@ function test() {
     var testFiles = [
         'bower_components/angular/angular.js',
         'bower_components/angular-mocks/angular-mocks.js',
-        'dist/js/angular-ms.js',
+        'dist/js/angular-ms.min.js',
         'test/js/*Spec.js'
     ];
 
@@ -74,7 +77,7 @@ function testWatch() {
     var testFiles = [
         'bower_components/angular/angular.js',
         'bower_components/angular-mocks/angular-mocks.js',
-        'dist/js/angular-ms.js',
+        'dist/js/angular-ms.min.js',
         'test/js/*Spec.js'
     ];
 
