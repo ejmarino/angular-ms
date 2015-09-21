@@ -11,7 +11,7 @@ Using a publish/subscribe...
 
 `angular-ms` provides a messaging services to angular based applications. It allows to any component to send and receive messages using publish/subscribe design pattern. 
 
-[Check out a demo here](http://ejmarino.github.io/angular-ms/demo/) (page it's based on SB Admin v2 theme, so some things are not well 'angularized', but it's enough for a demo I think :) )
+[Check out a demo here](http://ejmarino.github.io/angular-ms/) (page it's based on SB Admin v2 theme, so some things are not well 'angularized', but it's enough for a demo I think :) )
 
 ##How it works
 
