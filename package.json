@@ -1,6 +1,6 @@
 {
   "name": "angular-ms",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Angular's Publish/Subscribe Messaging Service",
   "main": "index.js",
   "scripts": {
