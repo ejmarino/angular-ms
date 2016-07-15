@@ -34,7 +34,7 @@ function prepareScripts() {
 
     return merge([
         tsResult.dts
-            .pipe(replace(/^\/{3} *\<reference path\=\"typings(.+)\" *\/\>$/mg, '/// <reference path="..$1" />'))
+            .pipe(replace(/^\/{3} *\<reference path\=\".+\" *\/\>$/mg, ''))
             .pipe(gulp.dest('dist/typings')),
         tsResult.js
             .pipe(ngAnnotate())

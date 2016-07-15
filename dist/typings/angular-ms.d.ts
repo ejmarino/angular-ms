@@ -1,4 +1,4 @@
-/// <reference path="../angularjs/angular.d.ts" />
+
 declare module ngms {
     interface IMessageService {
         getChannel(channelName: string): IChannel;
