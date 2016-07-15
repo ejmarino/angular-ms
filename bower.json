@@ -8,6 +8,9 @@
   "description": "Angular's Publish/Subscribe Messaging Service",
   "main": "dist/js/angular-ng.min.js",
   "license": "MIT",
+  "typescript": {
+    "definition": "dist/typings/angular-ms.d.ts"
+  },
   "ignore": [
     "**/.*",
     "node_modules",

@@ -43,7 +43,7 @@ var ngms;
             delete this.$subscriptions[token.tokenId];
         };
         return Channel;
-    })();
+    }());
     var Registry = (function () {
         function Registry($timeout, $q) {
             this.$simpleSubscribers = {};
@@ -201,12 +201,12 @@ var ngms;
             return uuid;
         };
         return Registry;
-    })();
+    }());
     var MessageService = (function () {
+        MessageService.$inject = ["$timeout", "$q"];
         function MessageService($timeout, $q) {
             this.$registry = new Registry($timeout, $q);
         }
-        MessageService.$inject = ["$timeout", "$q"];
         MessageService.prototype.getChannel = function (channelName) {
             return new Channel(channelName, this);
         };
@@ -276,6 +276,6 @@ var ngms;
             return stats;
         };
         return MessageService;
-    })();
+    }());
     ng.service('ngmsMessageService', MessageService);
 })(ngms || (ngms = {}));

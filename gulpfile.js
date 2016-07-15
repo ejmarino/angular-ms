@@ -2,6 +2,7 @@ var gulp = require('gulp');
 var uglify = require('gulp-uglify');
 var tslint = require('gulp-tslint');
 var rename = require('gulp-rename');
+var replace = require('gulp-replace');
 var ngAnnotate = require('gulp-ng-annotate');
 var karma = require('gulp-karma');
 var ts = require('gulp-typescript');
@@ -32,7 +33,9 @@ function prepareScripts() {
         ));
 
     return merge([
-        tsResult.dts.pipe(gulp.dest('dist/definitions')),
+        tsResult.dts
+            .pipe(replace(/^\/{3} *\<reference path\=\"typings(.+)\" *\/\>$/mg, '/// <reference path="..$1" />'))
+            .pipe(gulp.dest('dist/typings')),
         tsResult.js
             .pipe(ngAnnotate())
             .pipe(gulp.dest('dist/js'))
