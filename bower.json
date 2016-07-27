@@ -6,7 +6,7 @@
     "Emiliano Marino <emiliano@ejmarino.com>"
   ],
   "description": "Angular's Publish/Subscribe Messaging Service",
-  "main": "dist/js/angular-ng.min.js",
+  "main": "dist/js/angular-ms.min.js",
   "license": "MIT",
   "typescript": {
     "definition": "dist/typings/angular-ms.d.ts"
