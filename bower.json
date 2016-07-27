@@ -1,12 +1,12 @@
 {
   "name": "angular-ms",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "homepage": "https://github.com/ejmarino/angular-ms",
   "authors": [
     "Emiliano Marino <emiliano@ejmarino.com>"
   ],
   "description": "Angular's Publish/Subscribe Messaging Service",
-  "main": "dist/js/angular-ms.min.js",
+  "main": "dist/js/angular-ms.js",
   "license": "MIT",
   "typescript": {
     "definition": "dist/typings/angular-ms.d.ts"
