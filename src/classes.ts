@@ -1,4 +1,4 @@
-/// <reference path="../typings/angularjs/angular.d.ts" />
+/// <reference path="../typings/index.d.ts" />
 /// <reference path="interfaces.ts" />
 
 module ngms {

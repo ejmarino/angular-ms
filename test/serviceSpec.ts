@@ -1,5 +1,4 @@
-/// <reference path="../typings/jasmine/jasmine.d.ts" />
-/// <reference path="../typings/angularjs/angular-mocks.d.ts" />
+/// <reference path="../typings/index.d.ts" />
 /// <reference path="../src/interfaces.ts" />
 
 describe('Angular Message Service', () => {
@@ -7,7 +6,7 @@ describe('Angular Message Service', () => {
   var ngmsMessageService: ngms.IMessageService;
   var $timeout: ng.ITimeoutService;
 
-  beforeEach(module('ngms'));
+  beforeEach(angular.mock.module('ngms'));
 
   beforeEach(inject((_$timeout_: ng.ITimeoutService) => {
     $timeout = _$timeout_;
