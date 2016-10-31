@@ -1,10 +1,13 @@
 {
   "name": "angular-ms",
-  "version": "0.1.2",
+  "version": "0.1.6",
   "description": "Angular's Publish/Subscribe Messaging Service",
-  "main": "index.js",
+  "main": "dist/js/angular-ms.js",
+  "typings": "dist/typings/angular-ms.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prebuild": "bower install && typings i",
+    "build": "gulp"
   },
   "repository": {
     "type": "git",
@@ -25,10 +28,10 @@
     "url": "https://github.com/ejmarino/angular-ms/issues"
   },
   "homepage": "https://github.com/ejmarino/angular-ms",
-	"peerDependencies": {
+  "peerDependencies": {
     "phantomjs": "^1.9.17"
-	},
-    "devDependencies": {
+  },
+  "devDependencies": {
     "bower": "^1.4.1",
     "del": "^1.2.0",
     "gulp": "^3.8.11",
@@ -48,6 +51,7 @@
     "karma-jasmine": "^0.3.5",
     "karma-jasmine-html-reporter": "^0.1.8",
     "karma-phantomjs-launcher": "^0.2.0",
-    "merge2": "^0.3.5"
+    "merge2": "^0.3.5",
+    "typings": "^1.5.0"
   }
 }
